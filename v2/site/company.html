@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Company profile · Inc42 New-Age Tech Index</title>
+<meta name="description" content="Share price, financials in ₹ crore and Inc42 stories for a constituent of the Inc42 New-Age Tech Index (NATI).">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23dd2543'/%3E%3Cpath d='M7 22l6-7 5 4 7-9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script>
+  // Apply ?theme=light|dark (or #light/#dark) before first paint, as the index widget does
+  (function () {
+    try {
+      var q = new URLSearchParams(location.search).get("theme"), h = location.hash.replace("#", "");
+      var t = q || (h === "light" || h === "dark" ? h : null);
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Company profile for one NATI constituent: quote header → price chart → key stats → financial snapshot (₹ Cr) → Inc42 stories. Same column, tokens and embed contract as the index widget. */
+/* colour tokens live in assets/nati-ui.css, shared with the other page */
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--ink); }
+body { margin: 0; font: 15px/1.45 var(--font); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 760px; margin: 0 auto; padding-block: 16px 28px; padding-inline: 16px; display: grid; gap: 18px; }
+
+/* ---------- top bar and quote ---------- */
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.back { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 10px; border-radius: var(--r-ctl); background: var(--surface);
+  color: var(--ink-2); font-size: 14px; font-weight: 500; text-decoration: none; min-width: 0; }
+.back:hover { background: var(--wash); color: var(--ink); }
+.back svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.back span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mark { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--r-ctl); background: var(--surface); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; flex: none; }
+.mark i { width: 8px; height: 8px; border-radius: 2px; background: var(--brand); display: block; }
+.quote { display: grid; gap: 4px; }
+.quote h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.005em; line-height: 1.2; }
+.quote h1 small { font-size: 13px; color: var(--muted); font-weight: 500; letter-spacing: 0.06em; margin-left: 8px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; }
+.tag { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: var(--r-ctl); background: var(--surface); font-size: 12.5px; font-weight: 500; color: var(--ink-2); }
+.tag b { color: var(--ink); font-weight: 600; margin-left: 4px; }
+.price-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.last { font-size: 40px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
+.chg { display: inline-flex; align-items: center; gap: 8px; font-size: 21px; font-weight: 500; }
+.chg .dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; }
+.chg.up { color: var(--up); } .chg.up .dot { background: var(--up); }
+.chg.down { color: var(--down); } .chg.down .dot { background: var(--down); }
+.chg .dot svg { width: 14px; height: 14px; fill: var(--bg); }
+.chg.down .dot svg { transform: rotate(180deg); }
+.stamp { color: var(--muted); font-size: 14px; }
+.stamp .live { display: inline-flex; align-items: center; gap: 6px; }
+.stamp .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--up-line); }
+.stamp .nw { white-space: nowrap; }
+
+/* ---------- chart card ---------- */
+.card { background: var(--surface); border-radius: var(--r-card); padding: 6px; display: grid; gap: 6px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 6px 6px 2px; }
+.seg { display: inline-flex; padding: 3px; border-radius: var(--r-ctl); background: var(--wash); flex: none; }
+.seg button { border: 0; background: none; cursor: pointer; height: 34px; padding: 0 14px; border-radius: var(--r-ctl); font-weight: 500; font-size: 14px; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--raised); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--hair); }
+.seg button:disabled { opacity: .45; cursor: not-allowed; }
+.cmpbtn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border: 1px solid var(--hair-strong); border-radius: var(--r-ctl);
+  background: transparent; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--ink-2); }
+.cmpbtn i { width: 12px; height: 12px; border-radius: 3px; border: 2px solid var(--muted); }
+.cmpbtn[aria-pressed="true"] { color: var(--ink); border-color: var(--s2); background: var(--raised); }
+.cmpbtn[aria-pressed="true"] i { background: var(--s2); border-color: var(--s2); }
+.plot { position: relative; background: var(--surface); border-radius: 12px; min-width: 0; }
+#chart { height: 320px; }
+.axis-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 4px 12px; flex-wrap: wrap; padding: 8px 12px 0; min-height: 26px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-2); min-width: 0; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 0; border-top: 2px solid; display: inline-block; }
+.legend b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.ytitle, .xtitle { font-size: 12px; color: var(--muted); letter-spacing: 0.01em; }
+.ytitle { margin-left: auto; white-space: nowrap; }
+.xtitle { text-align: center; padding: 2px 12px 8px; }
+.chartbox { position: relative; }
+#chart:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: 8px; }
+.tip { position: absolute; top: 6px; z-index: 4; pointer-events: none; background: var(--raised); color: var(--ink); border-radius: 10px; box-shadow: var(--shadow);
+  padding: 8px 11px; font-size: 13px; min-width: 120px; transform: translateX(-50%); white-space: nowrap; }
+.tip .t { color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+.tip .row { display: flex; align-items: center; gap: 8px; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.tip .row b { font-weight: 600; }
+.tip .row i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+.tip .up { color: var(--up); } .tip .down { color: var(--down); }
+.pcl { position: absolute; right: 74px; z-index: 2; transform: translateY(-120%); font-size: 12.5px; color: var(--ink-2); pointer-events: none; background: var(--surface); padding: 0 4px; }
+.pcl b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pcl.below { transform: translateY(20%); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
+.ranges { display: flex; gap: 4px; padding: 4px 6px 6px; overflow-x: auto; scrollbar-width: none; }
+.ranges::-webkit-scrollbar { display: none; }
+.ranges button { border: 0; background: none; cursor: pointer; height: 40px; min-width: 56px; padding: 0 12px; border-radius: 12px; font-size: 15px; font-weight: 500; color: var(--ink-2); flex: none; }
+.ranges button:hover { background: var(--wash); }
+.ranges button[aria-pressed="true"] { background: var(--raised); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--hair); }
+.ranges button:disabled { opacity: .4; cursor: not-allowed; background: none; }
+
+/* ---------- sections ---------- */
+section.block { display: grid; gap: 12px; min-width: 0; }
+.bhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; border-bottom: 1px solid var(--hair-strong); padding-bottom: 10px; }
+h2 { margin: 0; font-size: 18px; font-weight: 600; }
+h2 small { display: block; font-size: 12.5px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 28px; margin: 0; }
+.stat { display: flex; justify-content: space-between; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--hair); min-width: 0; }
+.stat dt { color: var(--ink-2); min-width: 0; }
+.stat dd { margin: 0; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stat dd small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.tiles div { background: var(--surface); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.tiles span { display: block; font-size: 12.5px; color: var(--ink-2); }
+.tiles b { display: block; font-size: 20px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tiles em { display: block; font-style: normal; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.tiles em.up { color: var(--up); } .tiles em.down { color: var(--down); }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { font-weight: 500; color: var(--muted); font-size: 12.5px; padding: 8px 10px; border-bottom: 1px solid var(--hair-strong); white-space: nowrap; text-align: right; }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--bg); }
+td { padding: 10px; border-bottom: 1px solid var(--hair); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+td:first-child { color: var(--ink-2); }
+tr.sub td { font-size: 13px; color: var(--muted); padding-top: 4px; }
+tr.sub td:first-child { padding-left: 18px; }
+td.neg { color: var(--down); }
+.bal { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px; color: var(--ink-2); }
+.bal b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.note { color: var(--muted); font-size: 13px; margin: 0; }
+
+.news { list-style: none; margin: 0; padding: 0; display: grid; }
+.news li { border-bottom: 1px solid var(--hair); }
+.news a { display: grid; gap: 3px; padding: 12px 4px; text-decoration: none; }
+.news a:hover .nt { text-decoration: underline; text-underline-offset: 3px; }
+.news .nt { font-weight: 600; font-size: 15.5px; line-height: 1.35; text-wrap: pretty; }
+.news .nm { font-size: 12.5px; color: var(--muted); }
+.news .nm b { color: var(--brand); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-size: 11.5px; margin-right: 6px; }
+.empty { color: var(--muted); padding: 8px 0; }
+
+footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; border-top: 1px solid var(--hair); padding-top: 12px; }
+footer a { color: var(--ink-2); }
+.err { padding: 40px 0; text-align: center; color: var(--ink-2); }
+
+@media (max-width: 640px) {
+  .quote h1 { font-size: 22px; }
+  .last { font-size: 32px; }
+  .chg { font-size: 17px; }
+  #chart { height: 260px; }
+  .stats { grid-template-columns: 1fr; }
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+  .ranges { gap: 0; padding-inline: 2px; justify-content: space-between; }
+  .ranges button { min-width: 0; padding: 0 9px; font-size: 14px; height: 36px; }
+  .axis-row { padding-inline: 8px; }
+  .seg button { padding: 0 11px; }
+  .cmpbtn { padding: 0 12px; }
+  table { font-size: 13.5px; }
+  th, td { padding-inline: 6px; }
+  tr.sub td:first-child { padding-left: 12px; }
+  .mark { display: none; }
+}
+@media (max-width: 359px) {
+  .wrap { padding-inline: 12px; }
+  .ranges button { padding: 0 5px; font-size: 13px; }
+  .seg button { padding: 0 8px; font-size: 13.5px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<link rel="stylesheet" href="assets/nati-ui.css">
+</head>
+<body>
+<noscript><p style="padding:16px;font:15px/1.5 system-ui,sans-serif">This company profile needs JavaScript. Please enable it to see the chart and figures.</p></noscript>
+<div class="wrap" id="app">
+  <div class="topbar">
+    <a class="back" id="back" href="index.html"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg><span>Inc42 New-Age Tech Index</span></a>
+    <div class="mark" title="Inc42 Datalabs"><i></i>Inc42 Datalabs</div>
+  </div>
+
+  <header class="quote">
+    <h1 id="name">Loading…</h1>
+    <div class="tags" id="tags"></div>
+    <div class="price-row"><span class="last num" id="last">—</span><span class="chg" id="chg"></span></div>
+    <div class="stamp" id="stamp"></div>
+  </header>
+
+  <section class="card" aria-label="Share price chart">
+    <div class="toolbar">
+      <div class="seg" id="types" role="group" aria-label="Chart type"></div>
+      <button class="cmpbtn" id="cmp" type="button" aria-pressed="false"><i aria-hidden="true"></i>vs NATI</button>
+    </div>
+    <div class="plot">
+      <div class="axis-row">
+        <div class="legend" id="legend"></div>
+        <div class="ytitle" id="ytitle" aria-hidden="true">Share price (₹)</div>
+      </div>
+      <div class="chartbox">
+        <div id="chart" role="img" tabindex="0" aria-label="Share price chart"></div>
+        <div class="tip" id="tip" hidden></div>
+        <div class="pcl" id="pcl" hidden></div>
+        <div class="loading" id="loading">Loading chart…</div>
+      </div>
+      <div class="xtitle" id="xtitle" aria-hidden="true"></div>
+    </div>
+    <div class="ranges" id="ranges" role="group" aria-label="Time range"></div>
+  </section>
+
+  <section class="block" aria-labelledby="h-stats">
+    <div class="bhead"><h2 id="h-stats">Key stats</h2></div>
+    <dl class="stats" id="stats"></dl>
+  </section>
+
+  <section class="block" aria-labelledby="h-fin">
+    <div class="bhead">
+      <h2 id="h-fin">Financial snapshot<small id="finSub">₹ Cr · consolidated</small></h2>
+      <div class="seg" id="finSeg" role="group" aria-label="Period">
+        <button type="button" data-fin="annual" aria-pressed="true">Annual</button>
+        <button type="button" data-fin="quarterly" aria-pressed="false">Quarterly</button>
+      </div>
+    </div>
+    <div class="tiles" id="finTiles"></div>
+    <div class="tablewrap" id="finTable"><table><thead><tr id="finHead"></tr></thead><tbody id="finBody"></tbody></table></div>
+    <p class="empty" id="finEmpty" hidden>The source has no figures for this period type yet.</p>
+    <div class="bal" id="bal"></div>
+    <p class="note" id="finNote"></p>
+  </section>
+
+  <section class="block" aria-labelledby="h-news">
+    <div class="bhead"><h2 id="h-news">Latest from Inc42<small id="newsSub">Refreshed weekly · this month's stories first</small></h2></div>
+    <ul class="news" id="news"></ul>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script src="vendor/lightweight-charts-5.0.9.standalone.production.js"></script>
+<script>
+(() => {
+"use strict";
+const LWC = window.LightweightCharts;
+const DATA = "data/";
+const PARAMS = new URLSearchParams(location.search);
+// ?id=ETERNAL_NS, or #ETERNAL_NS where a host passes only the hash through (the claude.ai artifact viewer)
+const HASH_ID = /^[A-Z0-9_]+$/.test(location.hash.slice(1)) ? location.hash.slice(1) : null;
+const ID = (PARAMS.get("id") || HASH_ID || "ETERNAL_NS").replace(/[^A-Za-z0-9_]/g, "");
+const RANGES = [
+  { id: "1D", label: "1D", phrase: "Today" },
+  { id: "5D", label: "5D", phrase: "past 5 days" },
+  { id: "1M", label: "1M", phrase: "past month" },
+  { id: "6M", label: "6M", phrase: "past 6 months" },
+  { id: "YTD", label: "YTD", phrase: "year to date" },
+  { id: "1Y", label: "1Y", phrase: "past year" },
+  { id: "5Y", label: "5Y", phrase: "past 5 years" },
+  { id: "MAX", label: "MAX", phrase: "since listing" },
+];
+const TYPES = [{ id: "area", label: "Area" }, { id: "line", label: "Line" }, { id: "candle", label: "Candle" }];
+const ARROW = '<svg viewBox="0 0 24 24"><path d="M12 4l7 8h-5v8h-4v-8H5z"/></svg>';
+const state = { range: "1D", type: "area", nati: false, fin: "annual" };
+let CO, IDX = null, idxLoad = null, chart = null, renderToken = 0;
+let chartSlots = 0, keepView = null;
+// a remembered range this company can't show (5Y on a recent listing) stays remembered for the next one
+let wantRange = null;
+// The reader's chart and financials choices carry across profiles and reloads for the session
+const STORE_KEY = "nati:v2:company";
+function saveState() {
+  try { sessionStorage.setItem(STORE_KEY, JSON.stringify({ ...state, range: wantRange || state.range })); } catch (e) { /* not remembered */ }
+}
+function restoreState() {
+  let s = null;
+  try { s = JSON.parse(sessionStorage.getItem(STORE_KEY) || "null"); } catch (e) {}
+  if (!s || typeof s !== "object") return;
+  if (RANGES.some((r) => r.id === s.range)) state.range = s.range;
+  if (TYPES.some((t) => t.id === s.type)) state.type = s.type;
+  state.nati = !!s.nati;
+  if (s.fin === "annual" || s.fin === "quarterly") state.fin = s.fin;
+}
+
+const $ = (s) => document.querySelector(s);
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const nf2 = new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nf0 = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+const nf1 = new Intl.NumberFormat("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fmt = (v) => nf2.format(v);
+const pct = (v, d = 2) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v * 100).toFixed(d) + "%";
+const signed = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + nf2.format(Math.abs(v));
+// ₹ crore with Indian grouping; one decimal below ₹100 Cr so small figures keep their detail
+const cr = (v) => v == null ? "—" : (v < 0 ? "−" : "") + (Math.abs(v) < 100 ? nf1 : nf0).format(Math.abs(v));
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const dstr = (s) => { const [y, m, d] = s.slice(0, 10).split("-").map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
+const clock = (sec) => { const d = new Date(sec * 1000); let h = d.getUTCHours(); const m = d.getUTCMinutes();
+  const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return `${h}:${String(m).padStart(2, "0")} ${ap}`; };
+const dayOf = (sec) => { const d = new Date(sec * 1000); return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+async function getJSON(path) {
+  const r = await fetch(DATA + path, { cache: "no-cache" });
+  if (!r.ok) throw new Error(`${path}: ${r.status}`);
+  return r.json();
+}
+// The index is only needed once the reader turns on the NATI comparison
+function getIndex() {
+  if (!idxLoad) { idxLoad = getJSON("index.json").then((d) => (IDX = d)); idxLoad.catch(() => { idxLoad = null; }); }
+  return idxLoad;
+}
+const isLive = () => CO.market_open &&
+  Date.now() - new Date(CO.as_of).getTime() < ((CO.refresh_minutes || 20) + 45) * 60000;
+
+/* ---------------- range maths (as in the index widget) ---------------- */
+const isIntraday = (r) => r === "1D" || r === "5D";
+function rangeStart(lastDate, r) {
+  const d = new Date(lastDate + "T00:00:00Z");
+  const back = { "1M": [0, 1], "6M": [0, 6], "1Y": [1, 0], "5Y": [5, 0] }[r];
+  if (back) { d.setUTCFullYear(d.getUTCFullYear() - back[0]); d.setUTCMonth(d.getUTCMonth() - back[1]); }
+  if (r === "YTD") return `${d.getUTCFullYear() - 1}-12-31`;
+  if (r === "MAX") return "0000-00-00";
+  return d.toISOString().slice(0, 10);
+}
+function sliceDaily(rows, r, lastDate) {
+  const start = rangeStart(lastDate, r);
+  let i = 0;
+  for (let k = 0; k < rows.length; k++) { if (rows[k][0] <= start) i = k; else break; }
+  return rows.slice(i);
+}
+function sliceSessions(sessions, r) {
+  const use = r === "1D" ? sessions.slice(-1) : sessions.slice(-5);
+  if (!use.length) return null;
+  const pts = use.flatMap((s) => s.points);
+  return { pts, base: use[0].prev_close ?? pts[0][1] };
+}
+function alignDaily(rows, dates) {
+  const out = []; let i = -1;
+  for (const d of dates) {
+    while (i + 1 < rows.length && rows[i + 1][0] <= d) i++;
+    if (i >= 0) out.push({ time: d, value: rows[i][1] });
+  }
+  return out;
+}
+function view(r) {
+  if (isIntraday(r)) {
+    const s = sliceSessions(CO.sessions, r);
+    return { kind: "intraday", pts: s.pts.map(([t, v]) => ({ time: t, value: v })), base: s.base };
+  }
+  const rows = sliceDaily(CO.daily, r, CO.session_date);
+  return { kind: "daily", pts: rows.map((x) => ({ time: x[0], value: x[4] })),
+    ohlc: rows.map((x) => ({ time: x[0], open: x[1], high: x[2], low: x[3], close: x[4] })), base: rows[0][4] };
+}
+function intradayCandles(pts, minutes) {
+  const out = []; let cur = null, prev = null;
+  for (const p of pts) {
+    const b = Math.floor(p.time / (minutes * 60)) * minutes * 60;
+    if (!cur || cur.time !== b) {
+      if (cur) out.push(cur);
+      const o = prev && dayOf(prev.time) === dayOf(p.time) ? prev.value : p.value;
+      cur = { time: b, open: o, high: Math.max(o, p.value), low: Math.min(o, p.value), close: p.value };
+    } else { cur.high = Math.max(cur.high, p.value); cur.low = Math.min(cur.low, p.value); cur.close = p.value; }
+    prev = p;
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+/* ---------------- header ---------------- */
+function renderHeader(v) {
+  const last = isIntraday(state.range) ? CO.price : v.pts[v.pts.length - 1].value;
+  const ch = last - v.base;
+  $("#last").textContent = "₹" + fmt(last);
+  const el = $("#chg");
+  el.className = "chg " + (ch >= 0 ? "up" : "down");
+  el.innerHTML = `<span class="dot" aria-hidden="true">${ARROW}</span><span class="num">${pct(ch / v.base)} (${signed(ch)})</span><span>${RANGES.find((x) => x.id === state.range).phrase}</span>`;
+  const when = new Date(CO.as_of).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  $("#stamp").innerHTML = isLive()
+    ? `<span class="live">${when} IST</span> · Delayed · <span class="nw">NSE · Updates every ${CO.refresh_minutes || 20} minutes</span>`
+    : CO.market_open ? `As of ${when} IST · Delayed · NSE` : `${when} IST · At close · NSE`;
+}
+function renderIdentity() {
+  document.title = `${CO.company} share price, financials and news · Inc42 New-Age Tech Index`;
+  $("#name").innerHTML = `${esc(CO.company)}<small>${esc(CO.ticker)} · NSE</small>`;
+  $("#tags").innerHTML = `<span class="tag">${esc(CO.sector)}</span>
+    <span class="tag">NATI weight<b>${(CO.weight * 100).toFixed(2)}%</b></span>
+    <span class="tag">Rank<b>${CO.rank} of ${CO.constituents}</b></span>`;
+}
+
+/* ---------------- chart ---------------- */
+function themeColors() {
+  return { surface: css("--card"), ink2: css("--ink-2"), muted: css("--muted"), hair: css("--hair"),
+    up: css("--up-line"), upFill: css("--up-fill"), down: css("--down-line"), downFill: css("--down-fill"),
+    s1: css("--s1"), s2: css("--s2"), font: css("--font") };
+}
+const transparent = (c) => (c.startsWith("rgba") ? c.replace(/[\d.]+\)$/, "0)") : c + "00");
+
+// NATI over the same window, as % change from the window's start
+function natiLine(r, v) {
+  if (!IDX) return null;
+  if (v.kind === "intraday") {
+    const s = sliceSessions(IDX.sessions, r);
+    return s && s.pts.map(([t, x]) => ({ time: t, value: (x / s.base - 1) * 100 }));
+  }
+  const pts = alignDaily(IDX.daily.map((x) => [x[0], x[4]]), v.pts.map((p) => p.time));
+  return pts.length ? pts.map((p) => ({ time: p.time, value: (p.value / pts[0].value - 1) * 100 })) : null;
+}
+
+async function renderChart() {
+  const token = ++renderToken;
+  saveState();
+  const r = state.range, v = view(r), intraday = v.kind === "intraday";
+  renderHeader(v);
+  if (state.nati) { try { await getIndex(); } catch (e) { /* the legend says it is unavailable */ } }
+  if (token !== renderToken) return;
+  const nati = state.nati ? natiLine(r, v) : null;
+  const comparing = state.nati;
+  const C = themeColors();
+  const el = $("#chart");
+  $("#tip").hidden = true;
+  if (chart) { chart.remove(); chart = null; }
+  $("#loading").hidden = true;
+  $("#ytitle").textContent = comparing ? "Change over the period (%)" : "Share price (₹)";
+  $("#xtitle").textContent = intraday ? "Time (IST)" : "Date";
+
+  chart = LWC.createChart(el, {
+    autoSize: true,
+    layout: { background: { type: "solid", color: C.surface }, textColor: C.muted, fontFamily: C.font, fontSize: 12, attributionLogo: false },
+    grid: { vertLines: { visible: false }, horzLines: { color: C.hair } },
+    rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.06 } },
+    timeScale: { borderVisible: false, timeVisible: intraday, secondsVisible: false, rightOffset: 0, fixLeftEdge: true, fixRightEdge: true,
+      lockVisibleTimeRangeOnResize: true,
+      tickMarkFormatter: (time, type) => {
+        if (typeof time === "number") return type === LWC.TickMarkType.Time ? clock(time) : dayOf(time);
+        const s = typeof time === "string" ? time : `${time.year}-${String(time.month).padStart(2, "0")}-${String(time.day).padStart(2, "0")}`;
+        const [y, m, d] = s.split("-").map(Number);
+        if (type === LWC.TickMarkType.Year) return String(y);
+        if (type === LWC.TickMarkType.Month) return MONTHS[m - 1];
+        return `${MONTHS[m - 1]} ${d}`;
+      } },
+    crosshair: { mode: LWC.CrosshairMode.Normal,
+      vertLine: { color: C.muted, width: 1, style: LWC.LineStyle.Solid, labelVisible: false },
+      horzLine: { color: C.muted, width: 1, style: LWC.LineStyle.Dashed, labelBackgroundColor: C.ink2 } },
+    // Same touch contract as the index widget: vertical swipes scroll the article
+    handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+    handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: { time: true, price: false }, axisDoubleClickReset: { time: true, price: true } },
+    localization: { locale: "en-IN", priceFormatter: (x) => comparing ? (x >= 0 ? "+" : "−") + Math.abs(x).toFixed(2) + "%" : fmt(x) },
+  });
+
+  const up = v.pts[v.pts.length - 1].value >= v.base;
+  const lineCol = comparing ? C.s1 : up ? C.up : C.down;
+  const tips = [];
+  let main, mainData;
+  if (comparing) {
+    main = chart.addSeries(LWC.LineSeries, { color: C.s1, lineWidth: 2, priceLineVisible: false, crosshairMarkerRadius: 4 });
+    // Both lines start on the same day: on long ranges that is NATI's base date, not the listing
+    const from = nati && !intraday ? nati[0].time : null;
+    const own = from ? v.pts.filter((p) => p.time >= from) : v.pts;
+    const base = from ? own[0].value : v.base;
+    mainData = own.map((p) => ({ time: p.time, value: (p.value / base - 1) * 100 }));
+    main.setData(mainData);
+    tips.push({ series: main, label: CO.company, color: C.s1, pct: true });
+    if (nati) {
+      const s = chart.addSeries(LWC.LineSeries, { color: C.s2, lineWidth: 2, priceLineVisible: false, crosshairMarkerRadius: 4 });
+      s.setData(nati);
+      tips.push({ series: s, label: "NATI", color: C.s2, pct: true });
+    }
+    const end = (d) => d[d.length - 1].value / 100;
+    $("#legend").innerHTML = `<span><i style="border-color:${C.s1}"></i>${esc(CO.company)} <b>${pct(end(mainData))}</b></span>` +
+      (nati ? `<span><i style="border-color:${C.s2}"></i>NATI <b>${pct(end(nati))}</b></span>` : `<span>NATI unavailable</span>`) +
+      (from && from > v.pts[0].time ? `<span>from ${dstr(from)}, NATI's base</span>` : "");
+  } else if (state.type === "candle") {
+    mainData = intraday ? intradayCandles(v.pts, r === "1D" ? 15 : 60) : v.ohlc;
+    main = chart.addSeries(LWC.CandlestickSeries, { upColor: C.up, downColor: C.down, borderVisible: false, wickUpColor: C.up, wickDownColor: C.down, priceLineVisible: false });
+    main.setData(mainData);
+    tips.push({ series: main, ohlc: true });
+    $("#legend").innerHTML = "";
+  } else {
+    mainData = v.pts;
+    main = state.type === "line"
+      ? chart.addSeries(LWC.LineSeries, { color: lineCol, lineWidth: 2, priceLineVisible: false, crosshairMarkerRadius: 4 })
+      : chart.addSeries(LWC.AreaSeries, { lineColor: lineCol, topColor: up ? C.upFill : C.downFill, bottomColor: transparent(up ? C.upFill : C.downFill),
+          lineWidth: 2, priceLineVisible: false, crosshairMarkerRadius: 4 });
+    main.setData(mainData);
+    tips.push({ series: main });
+    $("#legend").innerHTML = "";
+  }
+
+  // Whitespace to the end of today's session so the 1D chart spans 9:15 AM–3:30 PM
+  let padSlots = 0;
+  if (intraday && r === "1D" && isLive()) {
+    const lastT = v.pts[v.pts.length - 1].time;
+    const close = lastT - (lastT % 86400) + (15 * 60 + 30) * 60;
+    const step = state.type === "candle" && !comparing ? 900 : 300;
+    const ws = [];
+    for (let t = lastT + step; t < close; t += step) ws.push({ time: t });
+    if (ws.length) { main.setData([...mainData, ...ws]); padSlots = ws.length; chart.applyOptions({ timeScale: { fixRightEdge: false } }); }
+  }
+  const slots = mainData.length + padSlots;
+  chartSlots = slots;
+  chart.timeScale().setVisibleLogicalRange({ from: 0, to: slots - 1 });
+  // a data refresh redraws the chart; put back the stretch of time the reader had zoomed to
+  if (keepView) { try { chart.timeScale().setVisibleRange(keepView); } catch (e) {} keepView = null; }
+
+  // Previous close reference on intraday ranges
+  const pcl = $("#pcl");
+  pcl.hidden = true;
+  if (intraday && !comparing) {
+    main.createPriceLine({ price: v.base, color: C.muted, lineWidth: 1, lineStyle: LWC.LineStyle.SparseDotted, axisLabelVisible: false, title: "" });
+    main.applyOptions({ autoscaleInfoProvider: (orig) => {
+      const res = orig();
+      if (!res || !res.priceRange) return res;
+      return { ...res, priceRange: { minValue: Math.min(res.priceRange.minValue, v.base), maxValue: Math.max(res.priceRange.maxValue, v.base) } };
+    } });
+    pcl.innerHTML = `${r === "1D" ? "Prev. close" : "Close before period"} <b>${fmt(v.base)}</b>`;
+    const owner = chart;
+    const place = () => {
+      if (chart !== owner) return;
+      const y = main.priceToCoordinate(v.base);
+      if (y == null) { pcl.hidden = true; return; }
+      pcl.style.top = y + "px"; pcl.classList.toggle("below", y < 24); pcl.hidden = false;
+    };
+    requestAnimationFrame(place);
+    chart.timeScale().subscribeVisibleLogicalRangeChange(() => requestAnimationFrame(place));
+  }
+
+  const tip = $("#tip");
+  chart.subscribeCrosshairMove((p) => {
+    if (!p.time || !p.point || p.point.x < 0) { tip.hidden = true; return; }
+    const rows = [];
+    for (const t of tips) {
+      const d = p.seriesData.get(t.series);
+      if (!d) continue;
+      if (t.ohlc) rows.push(...[["Open", d.open], ["High", d.high], ["Low", d.low], ["Close", d.close]]
+        .map(([k, x]) => `<div class="row"><span>${k}</span><b>${fmt(x)}</b></div>`));
+      else if (t.pct) rows.push(`<div class="row"><span><i style="background:${t.color}"></i>${esc(t.label)}</span><b class="${d.value >= 0 ? "up" : "down"}">${d.value >= 0 ? "+" : "−"}${Math.abs(d.value).toFixed(2)}%</b></div>`);
+      else { const ch = d.value / v.base - 1;
+        rows.push(`<div class="row"><b style="font-size:15px">₹${fmt(d.value)}</b><span class="${ch >= 0 ? "up" : "down"}">${pct(ch)}</span></div>`); }
+    }
+    if (!rows.length) { tip.hidden = true; return; }
+    tip.innerHTML = `<div class="t">${typeof p.time === "number" ? `${dayOf(p.time)}, ${clock(p.time)}` : dstr(p.time)}</div>${rows.join("")}`;
+    tip.hidden = false;
+    const w = el.clientWidth, half = tip.offsetWidth / 2;
+    tip.style.left = Math.min(Math.max(p.point.x, half + 4), w - half - 60) + "px";
+  });
+  el.setAttribute("aria-label", `${CO.company} share price, ${RANGES.find((x) => x.id === r).phrase}: ₹${fmt(v.pts[v.pts.length - 1].value)}, ${pct(v.pts[v.pts.length - 1].value / v.base - 1)}`);
+}
+
+// A range this company's history can fill: intraday needs 5-minute bars, the rest enough days
+function rangeOk(id) {
+  if (isIntraday(id)) return CO.sessions.length > 0;
+  return id === "MAX" || rangeStart(CO.session_date, id) >= CO.daily[0][0];
+}
+function renderControls() {
+  const comparing = state.nati;
+  $("#types").innerHTML = TYPES.map((t) => `<button type="button" data-type="${t.id}" aria-pressed="${!comparing && state.type === t.id}" ${comparing ? "disabled" : ""}>${t.label}</button>`).join("");
+  $("#types").title = comparing ? "Comparisons are drawn as lines" : "";
+  $("#cmp").setAttribute("aria-pressed", comparing);
+  const first = CO.daily[0][0];
+  $("#ranges").innerHTML = RANGES.map((r) => {
+    const noBars = isIntraday(r.id) && !CO.sessions.length;
+    const na = !rangeOk(r.id);
+    const why = noBars ? "No intraday prices from the source" : `Listed ${dstr(first)}`;
+    return `<button data-range="${r.id}" aria-pressed="${state.range === r.id}" ${na ? `disabled title="${why}"` : ""}>${r.label}</button>`;
+  }).join("");
+}
+
+/* ---------------- key stats ---------------- */
+function renderStats() {
+  const s = CO.stats, today = CO.daily[CO.daily.length - 1];
+  // listed less than a year ago: the "52-week" figures cover the time since listing
+  const wk = CO.daily[0][0] > rangeStart(CO.session_date, "1Y") ? "since listing" : "52-wk";
+  const stat = (k, v, sub) => `<div class="stat"><dt>${k}</dt><dd>${v}${sub ? `<small>${sub}</small>` : ""}</dd></div>`;
+  $("#stats").innerHTML = [
+    stat("Prev. close", CO.prev_close == null ? "—" : "₹" + fmt(CO.prev_close)),
+    stat("Day's range", `${fmt(today[3])} – ${fmt(today[2])}`, `Open ${fmt(today[1])}`),
+    stat("Market cap", `₹${nf0.format(CO.mcap_cr)} Cr`),
+    stat(wk === "52-wk" ? "52-wk high" : "High since listing", "₹" + fmt(s.wk52_high), dstr(s.wk52_high_date)),
+    stat(wk === "52-wk" ? "52-wk low" : "Low since listing", "₹" + fmt(s.wk52_low), dstr(s.wk52_low_date)),
+    stat("Free-float market cap", `₹${nf0.format(CO.ffmc_cr)} Cr`, `${Math.round(CO.free_float * 100)}% free float`),
+    stat("P/E (TTM)", s.pe_ttm == null ? "—" : nf1.format(s.pe_ttm)),
+    stat("P/B", s.pb == null ? "—" : nf2.format(s.pb)),
+    stat("Listed", CO.listing_date ? dstr(CO.listing_date) : "—", `In NATI since ${dstr(CO.in_index_since)}`),
+  ].join("");
+}
+
+/* ---------------- financials ---------------- */
+const margin = (a, b) => (a == null || !b ? null : a / b);
+function growth(cur, prev) {
+  if (cur == null || prev == null) return null;
+  if (prev <= 0) return cur > 0 && prev < 0 ? "turned positive" : null;
+  return cur / prev - 1;
+}
+function renderFin() {
+  const F = CO.financials;
+  const q = state.fin === "quarterly";
+  const rows = q ? F.quarterly : F.annual;
+  for (const b of document.querySelectorAll("#finSeg [data-fin]")) b.setAttribute("aria-pressed", b.dataset.fin === state.fin);
+  saveState();
+  $("#finSub").textContent = `₹ Cr · ${F.basis.toLowerCase()} · EPS in ₹`;
+  // Headline tiles: the latest period against the same period a year earlier where the source has
+  // it (the quarter four slots back), otherwise against the period before
+  const has = (x) => x.revenue != null || x.pat != null;
+  const cur = rows.find(has);
+  const k = rows.indexOf(cur);
+  const yago = q ? rows[k + 4] : rows[k + 1];
+  const ref = yago && has(yago) ? yago : rows.slice(k + 1).find(has);
+  $("#finTable").hidden = !cur;
+  $("#finEmpty").hidden = !!cur;
+  const vs = ref ? (ref === yago ? `YoY vs ${ref.label}` : `vs ${ref.label}`) : "";
+  // lenders and insurers report no EBITDA, and some filings lack a line: leave those tiles out
+  const tile = (label, raw, val, g, unit) => {
+    if (raw == null) return "";
+    const gt = g == null ? "" : typeof g === "string" ? g : pct(g, 1);
+    const cls = g == null ? "" : typeof g === "string" || g >= 0 ? "up" : "down";
+    return `<div><span>${label}</span><b>${val}${unit || ""}</b><em class="${cls}">${gt ? `${gt} ${vs}` : "&nbsp;"}</em></div>`;
+  };
+  $("#finTiles").innerHTML = cur ? [
+    tile(`Revenue, ${cur.label}`, cur.revenue, "₹" + cr(cur.revenue), ref && growth(cur.revenue, ref.revenue), " Cr"),
+    tile(cur.revenue == null ? `EBITDA, ${cur.label}` : "EBITDA", cur.ebitda, "₹" + cr(cur.ebitda), ref && growth(cur.ebitda, ref.ebitda), " Cr"),
+    tile(cur.revenue == null ? `Net profit, ${cur.label}` : "Net profit", cur.pat, "₹" + cr(cur.pat), ref && growth(cur.pat, ref.pat), " Cr"),
+    tile("EPS", cur.eps, "₹" + (cur.eps == null ? "—" : (cur.eps < 0 ? "−" : "") + nf2.format(Math.abs(cur.eps))), ref && growth(cur.eps, ref.eps)),
+  ].join("") : "";
+  $("#finHead").innerHTML = `<th scope="col">₹ Cr</th>` + rows.map((x) => `<th scope="col">${x.label}</th>`).join("");
+  // a line the source has for no period at all (EBITDA for a bank, say) is left out
+  const line = (label, f, cls, sub) => rows.every((x) => f(x) == null) ? "" : `<tr class="${cls || ""}"><td>${label}</td>${rows.map((x) => {
+    const val = f(x);
+    return `<td class="${typeof val === "number" && val < 0 ? "neg" : ""}">${val == null ? "—" : sub ? (val < 0 ? "−" : "") + Math.abs(val * 100).toFixed(1) + "%" : typeof val === "number" ? cr(val) : val}</td>`;
+  }).join("")}</tr>`;
+  $("#finBody").innerHTML = [
+    line("Revenue", (x) => x.revenue),
+    line("EBITDA", (x) => x.ebitda),
+    line("Margin", (x) => margin(x.ebitda, x.revenue), "sub", true),
+    line("Net profit", (x) => x.pat),
+    line("Margin", (x) => margin(x.pat, x.revenue), "sub", true),
+    line("EPS (₹)", (x) => (x.eps == null ? null : (x.eps < 0 ? "−" : "") + nf2.format(Math.abs(x.eps)))),
+  ].join("");
+  const B = F.balance;
+  $("#bal").innerHTML = B ? `<span>Balance sheet, ${B.label}:</span><span>Cash and investments <b>₹${cr(B.cash)} Cr</b></span>
+    <span>Total debt <b>₹${cr(B.debt)} Cr</b></span><span>Net worth <b>₹${cr(B.net_worth)} Cr</b></span>` : "";
+  const gaps = rows.filter((x) => x.revenue == null).map((x) => x.label);
+  $("#finNote").textContent = `${F.basis} figures as reported, ${F.source.replace(/^Company/, "company")}. Years end in March. Revenue is revenue from operations; EBITDA as reported by the source; margins are on revenue.` +
+    (gaps.length ? ` ${gaps.join(", ")} not available from the source.` : "");
+}
+
+/* ---------------- news ---------------- */
+const SECTION = { buzz: "News", features: "Feature", startups: "Startups", resources: "Explainer", insights: "Insights", reports: "Report", "ai-roundups": "Roundup" };
+function renderNews() {
+  const list = CO.news || [];
+  if (CO.news_updated) $("#newsSub").textContent = `Refreshed weekly · checked ${dstr(CO.news_updated)} · this month's stories first`;
+  $("#news").innerHTML = list.length ? list.map((n) => `<li><a href="${esc(n.url)}" target="_blank" rel="noopener">
+      <span class="nt">${esc(n.title)}</span>
+      <span class="nm"><b>${SECTION[n.section] || "Inc42"}</b>${dstr(n.date)}</span></a></li>`).join("")
+    : `<li class="empty">No recent Inc42 stories on ${esc(CO.company)}.</li>`;
+}
+
+function renderFooter() {
+  $("#foot").innerHTML = `<span>${esc(CO.company)} (${esc(CO.ticker)}) in the Inc42 New-Age Tech Index · data built ${new Date(CO.generated_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })} IST</span>
+    <span>Prices delayed, via Yahoo Finance. Financials are consolidated, in ₹ crore. For information only, not investment advice. Inc42 does not rate or recommend securities.</span>
+    <span>Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>.</span>`;
+}
+
+/* ---------------- events ---------------- */
+function wire() {
+  $("#types").addEventListener("click", (e) => { const b = e.target.closest("[data-type]"); if (!b || b.disabled) return;
+    state.type = b.dataset.type; renderControls(); renderChart(); });
+  $("#cmp").addEventListener("click", () => { state.nati = !state.nati; renderControls(); renderChart(); });
+  $("#ranges").addEventListener("click", (e) => { const b = e.target.closest("[data-range]"); if (!b || b.disabled) return;
+    state.range = b.dataset.range; wantRange = null; renderControls(); renderChart(); });
+  $("#finSeg").addEventListener("click", (e) => { const b = e.target.closest("[data-fin]"); if (!b) return; state.fin = b.dataset.fin; renderFin(); });
+  // Trackpad pinch arrives as Ctrl + wheel; plain wheel keeps scrolling the article
+  $("#chart").addEventListener("wheel", (e) => {
+    if (!(e.ctrlKey || e.metaKey) || !chart) return;
+    e.preventDefault();
+    const ts = chart.timeScale(), lr = ts.getVisibleLogicalRange();
+    if (!lr) return;
+    const w = (lr.to - lr.from) * (e.deltaY > 0 ? 1.2 : 0.83), to = lr.to;
+    ts.setVisibleLogicalRange({ from: Math.max(0, to - Math.max(8, w)), to });
+  }, { passive: false });
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  (mq.addEventListener ? mq.addEventListener("change", renderChart) : mq.addListener(renderChart));
+  new MutationObserver(renderChart).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+}
+// Embedded in an article: report the content height so the host page can size the iframe
+// (same messages as the index widget, so one embed script serves both pages)
+function reportHeight() {
+  if (window.parent === window) return;
+  let last = 0;
+  const post = () => {
+    const h = Math.ceil(document.body.getBoundingClientRect().height);
+    if (!h || h === last) return;
+    last = h;
+    window.parent.postMessage({ type: "nati:height", height: h }, "*");
+    window.parent.postMessage({ sentinel: "amp", type: "embed-size", height: h }, "*");
+  };
+  if ("ResizeObserver" in window) new ResizeObserver(post).observe(document.body);
+  window.addEventListener("load", post);
+  post();
+  window.parent.postMessage({ type: "nati:page", page: "company", id: ID }, "*");
+}
+
+async function init() {
+  reportHeight();
+  // Back to the index widget on its Constituents tab, keeping the theme the embed asked for
+  const back = new URLSearchParams({ tab: "constituents" });
+  if (PARAMS.get("theme")) back.set("theme", PARAMS.get("theme"));
+  $("#back").href = "index.html?" + back + "#constituents";
+  try {
+    CO = await getJSON(`companies/${ID}.json`);
+  } catch (err) {
+    $("#name").textContent = "Company not found";
+    $("#app").querySelectorAll("section, .quote .tags, .price-row").forEach((x) => (x.hidden = true));
+    $("#stamp").innerHTML = `There is no profile for “${esc(ID)}” yet. <a href="${$("#back").href}">Back to the index</a>.`;
+    return;
+  }
+  restoreState();
+  fitStateToData();
+  renderAll();
+  wire();
+  if (LWC) renderChart(); else $("#loading").textContent = "The chart library did not load. Refresh the page to try again.";
+  // Keep an open page current: look for a new data build every few minutes while visible
+  setInterval(refreshData, POLL_MS);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshData(); });
+}
+// Choices remembered from another company may not fit this one (a 5Y range on a recent listing)
+function fitStateToData() {
+  const hasFig = (x) => x.revenue != null || x.pat != null;
+  const F = CO.financials;
+  if (!F[state.fin].some(hasFig) && F[state.fin === "annual" ? "quarterly" : "annual"].some(hasFig))
+    state.fin = state.fin === "annual" ? "quarterly" : "annual";
+  $("#finSeg").hidden = !F.annual.some(hasFig) || !F.quarterly.some(hasFig);
+  if (!rangeOk(state.range)) { wantRange = state.range; state.range = rangeOk("1D") ? "1D" : "1M"; }
+}
+function renderAll() { renderIdentity(); renderControls(); renderStats(); renderFin(); renderNews(); renderFooter(); }
+
+/* ---------------- live refresh ---------------- */
+const POLL_MS = 5 * 60 * 1000;
+let refreshing = false;
+async function refreshData() {
+  if (document.hidden || refreshing || !CO) return;
+  refreshing = true;
+  try {
+    const next = await getJSON(`companies/${ID}.json`);
+    if (next && next.generated_at !== CO.generated_at) {
+      // the reader keeps their range, chart type, comparison, period switch and zoom
+      if (chart) {
+        const lr = chart.timeScale().getVisibleLogicalRange();
+        if (lr && lr.to - lr.from < (chartSlots - 1) * 0.98) keepView = chart.timeScale().getVisibleRange();
+      }
+      CO = next;
+      if (state.nati) { try { IDX = await getJSON("index.json"); } catch (e) { /* keep the copy on screen */ } }
+      fitStateToData();
+      renderAll();
+      if (LWC) renderChart();
+    } else {
+      renderHeader(view(state.range));     // no new build: the stamp may still need to stop saying live
+    }
+  } catch (e) {
+    /* offline, or the build is rewriting the file: keep showing the last data */
+  } finally {
+    refreshing = false;
+  }
+}
+init();
+})();
+</script>
+</body>
+</html>

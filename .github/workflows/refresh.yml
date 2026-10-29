@@ -1,0 +1,80 @@
+name: Refresh and deploy
+
+# Rebuilds the index from fresh Yahoo Finance prices, updates the widget's data and publishes
+# v2/site to GitHub Pages. Each Monday it also rebuilds the 50 company profiles in full
+# (financials, Inc42 stories, price history) and commits them, which also keeps this repo
+# active so GitHub does not pause the schedule.
+
+on:
+  schedule:
+    # Every 20 minutes, Monday–Friday, 03:00–10:40 UTC = 08:30–16:10 IST (NSE trades 09:15–15:30).
+    # GitHub can start scheduled runs late when it is busy.
+    - cron: "*/20 3-10 * * 1-5"
+    # Monday 07:30 IST: full company profile rebuild
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+    inputs:
+      full_rebuild:
+        description: "Also rebuild the company profiles in full (financials, stories, history; about 20 minutes)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write     # the weekly profile commit
+  pages: write        # publishing to GitHub Pages
+  id-token: write     # required by actions/deploy-pages
+
+concurrency:
+  group: nati-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      FULL: ${{ github.event.schedule == '0 2 * * 1' || inputs.full_rebuild == true }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Build the index from fresh prices
+        # Exits non-zero and writes nothing if validation fails; the site then keeps its last good data
+        run: python nati_ff.py
+
+      - name: Update the widget data (company prices, Key Insights)
+        run: python v2/refresh_v2.py
+
+      - name: Rebuild company profiles in full
+        if: env.FULL == 'true'
+        run: |
+          python v2/build_profiles.py
+          python v2/build_insights.py
+
+      - name: Save the rebuilt profiles
+        if: env.FULL == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add v2/site/data/companies v2/site/data/insights.json
+          git diff --cached --quiet || git commit -m "Weekly company profile rebuild"
+          git push
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: v2/site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

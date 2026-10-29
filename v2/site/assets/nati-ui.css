@@ -1,0 +1,139 @@
+/* NATI UI: shared design tokens and finishing layer for the index widget (index.html) and the
+   company profiles (company.html). Loaded after each page's own <style>, so the rules here win.
+   Light and dark are each tuned for their own surface. The dark values are the v1 dark theme
+   readers liked; light was reworked to match it: cool neutrals, white cards with a hairline edge
+   and soft shadow, crisper ink, and up/down colours that hold 4.5:1 as text. */
+
+:root {
+  --bg: #ffffff;
+  --surface: #f3f5f8;            /* quiet fills: segmented tracks, chips, metric tiles */
+  --card: #ffffff;               /* the chart card and insight cards */
+  --card-line: #e4e7ec;
+  --card-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 8px rgba(16, 24, 40, 0.05);
+  --raised: #ffffff;             /* menus, tooltips, popovers */
+  --ink: #0e1116;
+  --ink-2: #3b4350;
+  --muted: #687080;
+  --hair: #eceef2;
+  --hair-strong: #d5d9e0;
+  --wash: rgba(15, 23, 42, 0.055);
+  --up: #0a7a3d;
+  --up-line: #16a34a;
+  --up-fill: rgba(22, 163, 74, 0.16);
+  --down: #c3221d;
+  --down-line: #e23b3b;
+  --down-fill: rgba(226, 59, 59, 0.14);
+  --brand: #dd2543;
+  --focus: #2a78d6;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+  --bar: #2a78d6;
+  --shadow: 0 14px 36px rgba(15, 23, 42, 0.14), 0 2px 6px rgba(15, 23, 42, 0.06);
+  --font: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r-card: 20px;
+  --r-ctl: 999px;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  /* heatmap steps: neutral, then 0.1–1%, 1–2%, 2–3%, 3%+ either way; steps 3 and 4 carry --heat-hi text */
+  --heat-n: #e7eaee;
+  --heat-u1: #d3ebd9; --heat-u2: #92cca2; --heat-u3: #2a8547; --heat-u4: #137333;
+  --heat-d1: #f7d6d3; --heat-d2: #eda099; --heat-d3: #c93b32; --heat-d4: #a51d1a;
+  --heat-lo: #0e1116; --heat-hi: #ffffff;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111316; --surface: #1b1e22; --card: #1b1e22; --card-line: #1b1e22; --card-shadow: none; --raised: #23272c;
+    --ink: #eceef0; --ink-2: #b9bdc3; --muted: #8b9097; --hair: #2b2f35; --hair-strong: #3a3f46; --wash: rgba(236, 238, 240, 0.07);
+    --up: #81c995; --up-line: #81c995; --up-fill: rgba(129, 201, 149, 0.24);
+    --down: #f28b82; --down-line: #f28b82; --down-fill: rgba(242, 139, 130, 0.22);
+    --brand: #ff4d6a; --focus: #6ea8f0;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --bar: #3987e5;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --heat-n: #2b2f35;
+    --heat-u1: #1e3326; --heat-u2: #1f4d2e; --heat-u3: #1d6233; --heat-u4: #1f7a3b;
+    --heat-d1: #3d2523; --heat-d2: #5e2a26; --heat-d3: #84302a; --heat-d4: #a8332b;
+    --heat-lo: #eceef0; --heat-hi: #eceef0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111316; --surface: #1b1e22; --card: #1b1e22; --card-line: #1b1e22; --card-shadow: none; --raised: #23272c;
+  --ink: #eceef0; --ink-2: #b9bdc3; --muted: #8b9097; --hair: #2b2f35; --hair-strong: #3a3f46; --wash: rgba(236, 238, 240, 0.07);
+  --up: #81c995; --up-line: #81c995; --up-fill: rgba(129, 201, 149, 0.24);
+  --down: #f28b82; --down-line: #f28b82; --down-fill: rgba(242, 139, 130, 0.22);
+  --brand: #ff4d6a; --focus: #6ea8f0;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --bar: #3987e5;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --heat-n: #2b2f35;
+  --heat-u1: #1e3326; --heat-u2: #1f4d2e; --heat-u3: #1d6233; --heat-u4: #1f7a3b;
+  --heat-d1: #3d2523; --heat-d2: #5e2a26; --heat-d3: #84302a; --heat-d4: #a8332b;
+  --heat-lo: #eceef0; --heat-hi: #eceef0;
+  color-scheme: dark;
+}
+
+/* ---------- base ---------- */
+body { font-feature-settings: "tnum" 0, "cv11" 1; text-rendering: optimizeLegibility; }
+::selection { background: color-mix(in srgb, var(--focus) 24%, transparent); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+button, a, .ht { -webkit-tap-highlight-color: transparent; }
+button { transition: background-color 0.15s var(--ease), color 0.15s var(--ease), box-shadow 0.15s var(--ease), border-color 0.15s var(--ease); }
+
+/* ---------- quote header ---------- */
+.last { font-weight: 650; letter-spacing: -0.025em; }
+.chg { padding: 3px 12px 3px 4px; border-radius: var(--r-ctl); gap: 7px; }
+.chg.up { background: var(--up-fill); } .chg.down { background: var(--down-fill); }
+.chg .dot { width: 22px; height: 22px; }
+.mark { background: var(--surface); }
+.stamp .live::before { box-shadow: 0 0 0 0 color-mix(in srgb, var(--up-line) 55%, transparent); animation: nati-pulse 2s var(--ease) infinite; }
+@keyframes nati-pulse { 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+/* ---------- chart card ---------- */
+.card { background: var(--card); border: 1px solid var(--card-line); box-shadow: var(--card-shadow); border-radius: var(--r-card); padding: 8px; }
+.plot { background: var(--card); }
+.pcl { background: var(--card); }
+.tip, .ctip, .heattip, .infopop, .pop { border: 1px solid var(--card-line); }
+/* range picker as one segmented control */
+.ranges { background: var(--surface); border-radius: 14px; padding: 4px; margin: 2px 6px 6px; gap: 2px; }
+.ranges button { height: 36px; border-radius: 10px; }
+.ranges button[aria-pressed="true"] { background: var(--raised); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 0 0 1px var(--card-line); }
+.seg { background: var(--surface); }
+.seg button[aria-pressed="true"] { background: var(--raised); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 0 0 1px var(--card-line); }
+.cmpbtn { border-color: var(--hair-strong); }
+.chip { background: var(--surface); border-color: transparent; }
+/* loading: a shimmer block instead of a line of text */
+.loading { margin: 10px; border-radius: 12px; color: transparent;
+  background: linear-gradient(100deg, var(--surface) 30%, var(--wash) 50%, var(--surface) 70%); background-size: 300% 100%;
+  animation: nati-shimmer 1.3s linear infinite; }
+@keyframes nati-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+/* ---------- tabs and sections ---------- */
+.tabs { border-bottom-color: var(--hair); }
+.tabs button { transition: color 0.15s var(--ease); }
+.tabs button:hover { color: var(--ink); }
+.tabs button[aria-selected="true"] { font-weight: 600; }
+.tabs button[aria-selected="true"]::after { height: 3px; animation: nati-tab 0.25s var(--ease); }
+@keyframes nati-tab { from { transform: scaleX(0.4); opacity: 0; } to { transform: none; opacity: 1; } }
+.panel:not([hidden]) { animation: nati-in 0.22s var(--ease); }
+@keyframes nati-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.ins-card { background: var(--card); border: 1px solid var(--card-line); box-shadow: var(--card-shadow); border-radius: 16px; }
+.risk div, .tiles div { background: var(--surface); border-radius: 14px; }
+.stat { border-bottom-color: var(--hair); }
+footer { border-top-color: var(--hair); }
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp .live::before, .loading, .panel:not([hidden]), .tabs button[aria-selected="true"]::after { animation: none; }
+}
+
+/* four tabs on a phone: share the row instead of scrolling it */
+@media (max-width: 420px) {
+  .tabs { gap: 0; }
+  .tabs button { flex: 1 1 auto; padding: 12px 6px 11px; font-size: 14.5px; }
+}
+@media (max-width: 359px) { .tabs button { padding-inline: 4px; font-size: 13.5px; } }
+
+/* phones: the range picker keeps all eight ranges inside the card; the compare list centres on the card */
+@media (max-width: 640px) {
+  .ranges { gap: 0; padding: 3px; margin-inline: 2px; }
+  .ranges button { padding: 0 6px; }
+  .pop.cmp { left: 50%; transform: translateX(-50%); }
+}
+@media (max-width: 359px) { .ranges button { padding: 0 4px; } }

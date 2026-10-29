@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NATI embed test</title>
+<style>
+  body { margin: 0; background: #fff; color: #16181d; font: 17px/1.65 Georgia, "Times New Roman", serif; }
+  article { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 30px; line-height: 1.2; margin: 0 0 12px; }
+  .note { font: 13px/1.5 system-ui, sans-serif; color: #6b7280; background: #f3f5f8; padding: 10px 12px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<article>
+  <p class="note">Local test page for the embed. Serve the repo folder (<code>python -m http.server 8000</code>) and open
+    <code>http://127.0.0.1:8000/embed/embed-test.html</code>: the widget is framed from <code>localhost</code>, a different origin,
+    as it will be from GitHub Pages in a real article. Switch tabs or open a company profile; the frame should resize with no
+    inner scrollbar.</p>
+  <h1>Sample article with the NATI widget</h1>
+  <p>Text above the widget, to check spacing.</p>
+
+  <!-- ===== the embed, as in wordpress-embed.html, pointed at the local server ===== -->
+  <style>
+    #nati-index-widget { height: 1750px; }
+    @media (max-width: 640px) { #nati-index-widget { height: 2250px; } }
+  </style>
+  <figure class="nati-embed" style="margin:24px 0;padding:0;">
+    <iframe id="nati-index-widget" src="http://localhost:8000/v2/site/?theme=light"
+      title="Inc42 New-Age Tech Index: interactive chart, constituents, insights and company profiles"
+      loading="lazy" width="100%" height="1750" style="display:block;width:100%;border:0;"
+      referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  </figure>
+  <script>
+    (function () {
+      var frame = document.getElementById("nati-index-widget");
+      var origin = new URL(frame.getAttribute("src"), location.href).origin;
+      var pages = 0;
+      window.addEventListener("message", function (e) {
+        if (e.origin !== origin || e.source !== frame.contentWindow) return;
+        var d = e.data;
+        if (!d) return;
+        if (d.type === "nati:page") { if (pages++ && frame.getBoundingClientRect().top < 0) frame.scrollIntoView({ block: "start" }); return; }
+        if (d.type !== "nati:height" || typeof d.height !== "number") return;
+        frame.style.height = Math.max(400, Math.min(6000, Math.round(d.height))) + "px";
+      });
+    })();
+  </script>
+  <!-- ===== end of the embed ===== -->
+
+  <p>Text after the widget, to check nothing overlaps it and the page scrolls normally over the chart on phones.</p>
+</article>
+</body>
+</html>

@@ -1,0 +1,1892 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- /HEAD-START -->
+<title>Inc42 New-Age Tech Index</title>
+<meta name="description" content="The Inc42 New-Age Tech Index (NATI): 50 Indian new-age tech stocks, live chart and comparisons, constituent heatmap, weekly insights and company profiles.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23dd2543'/%3E%3Cpath d='M7 22l6-7 5 4 7-9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script>
+  // Apply ?theme=light|dark (or #light/#dark) before first paint, so an embed in a white
+  // article never flashes the dark theme while the chart library loads
+  (function () {
+    try {
+      var q = new URLSearchParams(location.search).get("theme"), h = location.hash.replace("#", "");
+      var t = q || (h === "light" || h === "dark" ? h : null);
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one column, quote header → chart card (toolbar, chart, range tabs) → tabbed detail (overview, constituents, method). Sized for an article column (≤ 760px). */
+/* colour tokens live in assets/nati-ui.css, shared with the other page */
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--ink); }
+body { margin: 0; font: 15px/1.45 var(--font); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+.wrap { max-width: 760px; margin: 0 auto; padding-block: 20px 28px; padding-inline: 16px; display: grid; gap: 18px; }
+
+/* ---------- quote header ---------- */
+.quote { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; align-items: start; }
+.quote .name { grid-column: 1; grid-row: 1; font-size: 21px; font-weight: 500; letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+.quote .name small { font-size: 13px; color: var(--muted); font-weight: 500; letter-spacing: 0.06em; margin-left: 6px; }
+.mark { grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--r-ctl);
+  background: var(--surface); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+.mark i { width: 8px; height: 8px; border-radius: 2px; background: var(--brand); display: block; }
+.price-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; grid-column: 1 / -1; grid-row: 2; }
+.last { font-size: 40px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
+.chg { display: inline-flex; align-items: center; gap: 8px; font-size: 21px; font-weight: 500; }
+.chg .dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; }
+.chg.up { color: var(--up); } .chg.up .dot { background: var(--up); }
+.chg.down { color: var(--down); } .chg.down .dot { background: var(--down); }
+.chg .dot svg { width: 14px; height: 14px; fill: var(--bg); }
+.chg.down .dot svg { transform: rotate(180deg); }
+.stamp { grid-column: 1 / -1; grid-row: 3; color: var(--muted); font-size: 14px; }
+.stamp .live { display: inline-flex; align-items: center; gap: 6px; }
+.stamp .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--up-line); }
+
+/* ---------- chart card ---------- */
+.card { background: var(--surface); border-radius: var(--r-card); padding: 6px; display: grid; gap: 6px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 6px 2px; }
+.tb { position: relative; }
+.tb > button { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border: 0; border-radius: var(--r-ctl);
+  background: transparent; cursor: pointer; font-weight: 500; font-size: 15px; }
+.tb > button:hover, .tb > button[aria-expanded="true"] { background: var(--wash); }
+.tb > button svg.ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.tb > button .caret { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid currentColor; transition: transform .15s; }
+.tb > button[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.tb > button:disabled { opacity: .45; cursor: not-allowed; }
+.pop { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; min-width: 220px; background: var(--raised); border-radius: 16px;
+  box-shadow: var(--shadow); padding: 8px 0; }
+.pop[hidden] { display: none !important; }
+.menu-item { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; background: none; padding: 12px 18px; cursor: pointer; text-align: left; font-size: 15px; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--wash); }
+.menu-item[aria-checked="true"] { background: var(--wash); }
+.menu-item svg { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.menu-item .check { width: 18px; flex: none; color: var(--focus); font-weight: 700; visibility: hidden; }
+.menu-item[aria-checked="true"] .check { visibility: visible; }
+.menu-item small { display: block; color: var(--muted); font-size: 12.5px; }
+
+.cmp { width: min(420px, calc(100vw - 32px)); padding: 0; overflow: hidden; }
+.cmp .search { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 2px solid var(--focus); }
+.cmp .search svg { width: 20px; height: 20px; fill: none; stroke: var(--focus); stroke-width: 2; flex: none; }
+.cmp input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 16px; outline: none; }
+.cmp input::placeholder { color: var(--muted); }
+.cmp .x { border: 0; background: none; cursor: pointer; padding: 4px; color: var(--ink-2); font-size: 20px; line-height: 1; }
+.cmp .list { max-height: 330px; overflow-y: auto; padding: 4px 0 8px; }
+.cmp .group { padding: 12px 18px 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
+.sym { display: grid; grid-template-columns: 1fr auto; gap: 0 14px; width: 100%; border: 0; background: none; text-align: left; cursor: pointer; padding: 9px 18px; }
+.sym:hover, .sym:focus-visible { background: var(--wash); }
+.sym[aria-pressed="true"] { background: var(--wash); }
+.sym:disabled { opacity: .45; cursor: not-allowed; }
+.sym .n { font-weight: 600; font-size: 15.5px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sym .n span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sym .n i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.sym .s { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sym .why { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+.sym .v { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sym .p { text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end; }
+.sym .p.up { color: var(--up); } .sym .p.down { color: var(--down); }
+.sym .p b { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; }
+.sym .p.up b { background: var(--up); } .sym .p.down b { background: var(--down); }
+.sym .p b svg { width: 10px; height: 10px; fill: var(--bg); }
+.sym .p.down b svg { transform: rotate(180deg); }
+.cmp .empty { padding: 18px; color: var(--muted); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 8px; }
+.chips:empty { display: none; }
+.chip { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 6px 0 12px; border-radius: var(--r-ctl);
+  background: var(--raised); font-size: 13.5px; font-weight: 500; border: 1px solid var(--hair); }
+.chip i { width: 10px; height: 10px; border-radius: 3px; }
+.chip .pct { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.chip button { border: 0; background: none; cursor: pointer; width: 22px; height: 22px; border-radius: 50%; color: var(--ink-2); font-size: 16px; line-height: 1; }
+.chip button:hover { background: var(--wash); }
+.chip.na { opacity: .6; }
+
+.plot { position: relative; background: var(--surface); border-radius: 12px; min-width: 0; }
+#chart { height: 330px; }
+#chart.with-macd { height: 430px; }
+.axis-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 4px 12px; flex-wrap: wrap; padding: 8px 12px 0; min-height: 26px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-2); min-width: 0; }
+.ytitle, .xtitle { font-size: 12px; color: var(--muted); letter-spacing: 0.01em; }
+.ytitle { margin-left: auto; white-space: nowrap; }
+.xtitle { text-align: center; padding: 2px 12px 8px; }
+.chartbox { position: relative; }
+.chartbox.zoomed #chart { cursor: grab; }
+.chartbox.zoomed #chart:active { cursor: grabbing; }
+#chart:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: 8px; }
+.zoom { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+.zoom button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: grid; place-items: center; color: var(--ink); }
+.zoom button:hover:not(:disabled) { background: var(--wash); }
+.zoom button:disabled { opacity: .35; cursor: not-allowed; }
+.zoom svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 0; border-top: 2px solid; display: inline-block; }
+.legend i.dash { border-top-style: dashed; }
+.legend .from { color: var(--muted); }
+.legend b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); }
+.tip { position: absolute; top: 6px; z-index: 4; pointer-events: none; background: var(--raised); color: var(--ink); border-radius: 10px; box-shadow: var(--shadow);
+  padding: 8px 11px; font-size: 13px; min-width: 120px; transform: translateX(-50%); white-space: nowrap; }
+.tip[hidden] { display: none !important; }
+.tip .t { color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+.tip .row { display: flex; align-items: center; gap: 8px; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.tip .row b { font-weight: 600; }
+.tip .row i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+.tip .up { color: var(--up); } .tip .down { color: var(--down); }
+.pcl { position: absolute; right: 74px; z-index: 2; transform: translateY(-120%); font-size: 12.5px; color: var(--ink-2); pointer-events: none; background: var(--surface); padding: 0 4px; }
+.pcl b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pcl.below { transform: translateY(20%); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
+
+.ranges { display: flex; gap: 4px; padding: 4px 6px 6px; overflow-x: auto; scrollbar-width: none; }
+.ranges::-webkit-scrollbar { display: none; }
+.ranges button { border: 0; background: none; cursor: pointer; height: 40px; min-width: 56px; padding: 0 12px; border-radius: 12px; font-size: 15px; font-weight: 500; color: var(--ink-2); flex: none; }
+.ranges button:hover { background: var(--wash); }
+.ranges button[aria-pressed="true"] { background: var(--raised); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--hair); }
+.ranges button:disabled { opacity: .4; cursor: not-allowed; background: none; }
+
+/* ---------- tabs ---------- */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--hair-strong); overflow-x: auto; scrollbar-width: none; }
+.tabs button { border: 0; background: none; cursor: pointer; padding: 12px 20px 11px; font-size: 16px; font-weight: 500; color: var(--ink-2); position: relative; flex: none; }
+.tabs button[aria-selected="true"] { color: var(--ink); }
+.tabs button[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--focus); }
+.panel { display: grid; gap: 22px; min-width: 0; }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 28px; }
+.stat { display: flex; justify-content: space-between; gap: 12px; padding: 13px 4px; border-bottom: 1px solid var(--hair); min-width: 0; }
+.stat dt { color: var(--ink-2); min-width: 0; }
+.stat dd { margin: 0; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stat dd small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+.stat.hl dt { color: var(--ink); font-weight: 600; }
+
+h3 { margin: 0 0 4px; font-size: 13px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.risk { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.risk div { background: var(--surface); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.risk span { display: flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--ink-2); }
+/* (i) explainers on the risk metrics: one shared card, placed under the tile that opened it */
+.infowrap { position: relative; }
+.info { display: inline-grid; place-items: center; width: 24px; height: 24px; margin: -4px -4px -4px 0; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: var(--muted); cursor: pointer; flex: none; }
+.info svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.info:hover, .info[aria-expanded="true"] { color: var(--focus); background: var(--wash); }
+.infopop { position: absolute; z-index: 6; width: min(300px, 100%); background: var(--raised); color: var(--ink); border-radius: 12px; box-shadow: var(--shadow);
+  padding: 12px 14px; font-size: 13.5px; line-height: 1.45; }
+.infopop b { display: block; font-size: 14px; margin-bottom: 4px; }
+.infopop p { margin: 0 0 6px; color: var(--ink-2); }
+.infopop p:last-child { margin-bottom: 0; }
+.infopop em { font-style: normal; color: var(--ink); font-weight: 600; }
+.risk b { display: block; font-size: 20px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.risk b.up { color: var(--up); } .risk b.down { color: var(--down); }
+.note { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+
+.sectors { display: grid; gap: 8px; }
+.sec { display: grid; grid-template-columns: minmax(0, 190px) 1fr 52px; gap: 12px; align-items: center; font-size: 14px; }
+.sec .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.sec .lab small { color: var(--muted); }
+.sec .track { height: 10px; border-radius: 0 4px 4px 0; position: relative; }
+.sec .track i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar); border-radius: 0 4px 4px 0; min-width: 2px; }
+.sec .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+
+/* constituents table */
+.tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tools input { flex: 1; min-width: 180px; height: 40px; border-radius: var(--r-ctl); border: 1px solid var(--hair-strong); background: var(--bg); color: var(--ink); padding: 0 16px; font: inherit; }
+.tools span { color: var(--muted); font-size: 13px; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12.5px; padding: 8px 10px; border-bottom: 1px solid var(--hair-strong); white-space: nowrap; }
+th button { border: 0; background: none; cursor: pointer; color: inherit; font: inherit; padding: 0; display: inline-flex; gap: 4px; align-items: center; }
+th[aria-sort] button { color: var(--ink); font-weight: 600; }
+th.r, td.r { text-align: right; }
+td { padding: 10px; border-bottom: 1px solid var(--hair); font-variant-numeric: tabular-nums; vertical-align: middle; }
+td .co { font-weight: 600; }
+td .co small { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; }
+td .w { display: grid; grid-template-columns: 1fr 52px; gap: 8px; align-items: center; min-width: 120px; }
+td .w i { height: 8px; background: var(--bar); border-radius: 0 3px 3px 0; display: block; }
+td.up { color: var(--up); } td.down { color: var(--down); }
+.more { justify-self: center; height: 40px; padding: 0 20px; border-radius: var(--r-ctl); border: 1px solid var(--hair-strong);
+  background: var(--bg); color: var(--ink); cursor: pointer; font-weight: 500; }
+.more:hover { background: var(--wash); }
+tr.cap td .w b::after { content: " cap"; font-size: 10.5px; color: var(--muted); font-weight: 500; }
+
+/* constituents heatmap: sectors, then companies, sized by index weight and coloured by the day's change */
+.seg { display: inline-flex; padding: 3px; border-radius: var(--r-ctl); background: var(--surface); flex: none; }
+.seg button { border: 0; background: none; cursor: pointer; height: 34px; padding: 0 16px; border-radius: var(--r-ctl); font-weight: 500; font-size: 14px; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--raised); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--hair); }
+.heat { display: grid; gap: 10px; min-width: 0; }
+.heat-controls { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 12px; }
+.heat-controls .seg button { padding: 0 12px; }
+.movers li small { color: var(--muted); font-size: 11.5px; }
+.heat-key { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; font-size: 13px; color: var(--ink-2); }
+.heat-key .up { color: var(--up); font-weight: 600; } .heat-key .down { color: var(--down); font-weight: 600; }
+.scale { display: grid; grid-template-columns: repeat(9, 24px); row-gap: 3px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.scale i { height: 10px; display: block; }
+.scale i:first-child { border-radius: 3px 0 0 3px; } .scale i:nth-child(9) { border-radius: 0 3px 3px 0; }
+.scale span { grid-row: 2; text-align: center; white-space: nowrap; }
+.heatbox { position: relative; }
+.heatmap { position: relative; background: var(--bg); }
+.hsec { position: absolute; height: 18px; padding: 1px 2px 0; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ht { position: absolute; border: 0; padding: 5px 6px; margin: 0; cursor: pointer; overflow: hidden; text-align: left;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1px; border-radius: 2px;
+  color: var(--heat-lo); font-size: 11.5px; line-height: 1.2; }
+.ht b { font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: clip; }
+.ht span { font-variant-numeric: tabular-nums; white-space: nowrap; opacity: .9; }
+.ht.big { font-size: 13px; } .ht.big b { font-size: 14px; }
+.h-n { background: var(--heat-n); }
+.h-u1 { background: var(--heat-u1); } .h-u2 { background: var(--heat-u2); }
+.h-u3 { background: var(--heat-u3); color: var(--heat-hi); } .h-u4 { background: var(--heat-u4); color: var(--heat-hi); }
+.h-d1 { background: var(--heat-d1); } .h-d2 { background: var(--heat-d2); }
+.h-d3 { background: var(--heat-d3); color: var(--heat-hi); } .h-d4 { background: var(--heat-d4); color: var(--heat-hi); }
+.ht.dim { opacity: .22; }
+@media (hover: hover) { .ht:hover { box-shadow: inset 0 0 0 2px var(--ink); } }
+.ht:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; z-index: 1; }
+.ht.on { box-shadow: inset 0 0 0 2px var(--ink); }
+.heattip { position: absolute; z-index: 5; pointer-events: none; background: var(--raised); color: var(--ink); border-radius: 10px; box-shadow: var(--shadow);
+  padding: 9px 12px; font-size: 13px; min-width: 190px; max-width: 260px; }
+.heattip .hn { font-weight: 600; font-size: 14.5px; }
+.heattip .t { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.heattip .row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+.heattip .row b { font-weight: 600; }
+.heattip .up { color: var(--up); } .heattip .down { color: var(--down); }
+.heattip.pinned { pointer-events: auto; }
+.heattip .go { display: block; margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--hair); font-size: 12.5px; font-weight: 600; color: var(--focus); text-decoration: none; }
+td .co a { color: inherit; text-decoration: underline; text-decoration-color: var(--hair-strong); text-underline-offset: 3px; }
+td .co a:hover { text-decoration-color: currentColor; }
+.movers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+.movers h4 { margin: 0 0 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.movers ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.movers li { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 5px 0; border-bottom: 1px solid var(--hair); }
+.movers li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.movers li b { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.movers .up { color: var(--up); } .movers .down { color: var(--down); }
+
+/* ---------- key insights ---------- */
+.ins-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 8px 20px; }
+.ins-head h3 { margin: 0 0 2px; }
+.ins-title { display: grid; gap: 12px; justify-items: start; }
+.days.many { gap: 3px; }
+.days.many .day small { font-size: 11px; min-height: 2.5em; }
+.days.many .day .col i { left: 8%; right: 8%; }
+.ins-range { font-size: 14px; color: var(--ink-2); }
+.ins-big { text-align: right; }
+.ins-big b { display: block; font-size: 30px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.ins-big b.up { color: var(--up); } .ins-big b.down { color: var(--down); }
+.ins-big span { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ins-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.ins-lines li { position: relative; padding-left: 18px; color: var(--ink-2); max-width: 70ch; }
+.ins-lines li::before { content: ""; position: absolute; left: 3px; top: 0.62em; width: 6px; height: 6px; border-radius: 50%; background: var(--focus); }
+.ins-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ins-card { background: var(--surface); border-radius: 14px; padding: 14px 16px 16px; display: grid; gap: 10px; min-width: 0; align-content: start; }
+.ins-card h4 { margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.ins-card .sub { margin: -6px 0 0; font-size: 12.5px; color: var(--muted); }
+/* diverging bars: label | two-sided track around zero | value */
+.dvs { display: grid; gap: 9px; }
+.dv { display: grid; grid-template-columns: minmax(0, 118px) 1fr 62px; gap: 10px; align-items: center; font-size: 13.5px; }
+.dv .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.dv.me .lab { color: var(--ink); font-weight: 600; }
+.dv .trk { position: relative; height: 12px; }
+.dv .trk::before { content: ""; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 1px; background: var(--hair-strong); }
+.dv .trk i { position: absolute; top: 0; bottom: 0; min-width: 2px; }
+.dv .trk i.pos { left: 50%; background: var(--up-line); border-radius: 0 4px 4px 0; }
+.dv .trk i.neg { right: 50%; background: var(--down-line); border-radius: 4px 0 0 4px; }
+.dvs.one .trk::before { left: 0; }
+.dvs.one .trk i.pos, .dvs.one .trk i.neg { left: 0; right: auto; border-radius: 0 4px 4px 0; }
+.dvs.wide .dv { grid-template-columns: minmax(0, 210px) 1fr 62px; }
+.dv .val { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* day-by-day columns around a zero line */
+.days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.day { display: grid; grid-template-rows: 132px auto; gap: 6px; text-align: center; min-width: 0; }
+.day .col { position: relative; }
+.day .col::before { content: ""; position: absolute; left: -4px; right: -4px; top: var(--zero); height: 1px; background: var(--hair-strong); }
+.day .col i { position: absolute; left: 18%; right: 18%; min-height: 2px; }
+.day .col i.pos { background: var(--up-line); border-radius: 4px 4px 0 0; }
+.day .col i.neg { background: var(--down-line); border-radius: 0 0 4px 4px; }
+.day .col span { position: absolute; left: -4px; right: -4px; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+.day small { font-size: 12px; color: var(--muted); line-height: 1.25; }
+.day small b { display: block; color: var(--ink-2); font-weight: 600; }
+/* movers: lifted | dragged, each with a bar scaled to the largest move */
+.movers2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 28px; }
+.movers2 h5 { margin: 0 0 2px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.movers2 ol { margin: 0; padding: 0; list-style: none; }
+.movers2 li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 8px 0; border-bottom: 1px solid var(--hair); }
+.movers2 .co { min-width: 0; font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.movers2 .co a { color: inherit; text-decoration: none; } .movers2 .co a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.movers2 .co small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.movers2 b { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+.movers2 .bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--wash); position: relative; overflow: hidden; }
+.movers2 .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; }
+.movers2 .up { color: var(--up); } .movers2 .down { color: var(--down); }
+.movers2 .bar i.up { background: var(--up-line); } .movers2 .bar i.down { background: var(--down-line); }
+/* correlation chart */
+.corrlegend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink-2); }
+.corrlegend span { display: inline-flex; align-items: center; gap: 6px; }
+.corrlegend i { width: 14px; height: 0; border-top: 2px solid; }
+.corrlegend b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.corrbox { position: relative; }
+#insCorr { display: block; width: 100%; height: 220px; overflow: visible; touch-action: pan-y; }
+#insCorr text { font: 11.5px var(--font); fill: var(--muted); font-variant-numeric: tabular-nums; }
+#insCorr .dl { font-size: 12px; font-weight: 600; fill: var(--ink-2); }
+.ctip { position: absolute; z-index: 4; pointer-events: none; background: var(--raised); color: var(--ink); border-radius: 10px; box-shadow: var(--shadow);
+  padding: 8px 11px; font-size: 13px; white-space: nowrap; transform: translateX(-50%); }
+.ctip .t { color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+.ctip .row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+.ctip .row i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+.corrtable summary { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.corrtable table { margin-top: 8px; }
+.method { display: grid; gap: 14px; max-width: 65ch; }
+.method p, .method li { color: var(--ink-2); }
+.method ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.method b { color: var(--ink); }
+details { border-top: 1px solid var(--hair); padding-top: 10px; }
+summary { cursor: pointer; font-weight: 600; }
+details ul { margin-top: 8px; }
+
+footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; border-top: 1px solid var(--hair); padding-top: 12px; }
+footer a { color: var(--ink-2); }
+
+@media (max-width: 640px) {
+  .last { font-size: 32px; }
+  .chg { font-size: 17px; }
+  .quote .name { font-size: 18px; }
+  .quote .name { grid-column: 1 / -1; grid-row: 2; }
+  .mark { grid-row: 1; grid-column: 1 / -1; justify-self: start; padding: 6px 12px; }
+  .price-row { grid-row: 3; } .stamp { grid-row: 4; }
+  #chart { height: 260px; } #chart.with-macd { height: 350px; }
+  .toolbar { position: relative; gap: 0; padding-inline: 2px; }
+  .tb { position: static; }
+  .pop { left: 6px; }
+  .tb > button { padding: 0 9px; gap: 6px; font-size: 14px; }
+  .tb > button .caret { border-left-width: 4px; border-right-width: 4px; border-top-width: 5px; }
+  .tabs button { padding: 12px 14px 11px; font-size: 15px; }
+  .tb > button .lbl-opt { display: none; }
+  .stats { grid-template-columns: 1fr; }
+  .risk { grid-template-columns: repeat(2, 1fr); }
+  .sec { grid-template-columns: minmax(0, 120px) 1fr 48px; }
+  .hide-sm { display: none; }
+  .movers { grid-template-columns: 1fr; }
+  .ins-grid, .movers2 { grid-template-columns: 1fr; }
+  .ins-big { text-align: left; }
+  .dv, .dvs.wide .dv { grid-template-columns: minmax(0, 118px) 1fr 58px; }
+  .tools #consCount { margin-left: auto; }
+  .tools input { order: 1; flex-basis: 100%; }
+  .ranges { gap: 0; padding-inline: 2px; justify-content: space-between; }
+  .ranges button { min-width: 0; padding: 0 9px; font-size: 14px; height: 36px; }
+  .zoom button { width: 34px; height: 34px; }
+  .zoom svg { width: 18px; height: 18px; }
+  .axis-row { padding-inline: 8px; }
+}
+@media (max-width: 420px) { .lbl-long { display: none; } .tb > button svg.ic, #typeIcon { display: none; } .tb > button { padding: 0 7px; } #zoomReset { display: none; }
+  .tabs button { padding: 12px 11px 11px; } }
+@media (max-width: 359px) {
+  .wrap { padding-inline: 12px; }
+  .tb > button { padding: 0 5px; gap: 4px; font-size: 13.5px; }
+  .zoom button { width: 30px; height: 32px; }
+  .ranges button { padding: 0 5px; font-size: 13px; }
+  .tabs button { padding: 12px 8px 11px; font-size: 14px; }
+}
+.stamp .nw { white-space: nowrap; }
+@media (min-width: 641px) and (max-width: 760px) { .risk { grid-template-columns: repeat(3, 1fr); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<link rel="stylesheet" href="assets/nati-ui.css">
+<!-- /HEAD-END -->
+</head>
+<body>
+<!-- /BODY-START -->
+<noscript><p style="padding:16px;font:15px/1.5 system-ui,sans-serif">The Inc42 New-Age Tech Index chart needs JavaScript. Please enable it to see the index.</p></noscript>
+<div class="wrap" id="app">
+  <header class="quote">
+    <h1 class="name">Inc42 New-Age Tech Index<small>NATI</small></h1>
+    <div class="mark" title="Inc42 Datalabs"><i></i>Inc42 Datalabs</div>
+    <div class="price-row">
+      <span class="last num" id="last">—</span>
+      <span class="chg" id="chg"></span>
+    </div>
+    <div class="stamp" id="stamp">Loading index…</div>
+  </header>
+
+  <section class="card" aria-label="Index chart">
+    <div class="toolbar">
+      <div class="tb">
+        <button id="typeBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="typeMenu">
+          <span id="typeIcon"></span><span id="typeLabel">Area</span><span class="caret"></span>
+        </button>
+        <div class="pop" id="typeMenu" role="menu" hidden></div>
+      </div>
+      <div class="tb">
+        <button id="cmpBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="cmpPop">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 8-9"/><path d="M3 21l6-7 4 3 8-8"/></svg><span>Compare</span><span class="caret"></span>
+        </button>
+        <div class="pop cmp" id="cmpPop" role="dialog" aria-label="Compare with an index or a constituent" hidden>
+          <div class="search">
+            <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+            <input id="cmpSearch" type="search" placeholder="Search indices or companies…" autocomplete="off" aria-label="Search indices or companies">
+            <button class="x" id="cmpClose" aria-label="Close">×</button>
+          </div>
+          <div class="list" id="cmpList"></div>
+        </div>
+      </div>
+      <div class="tb">
+        <button id="indBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="indMenu">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M4 20V14M8 20V11M12 20V13M16 20V9M20 20V6"/><path d="M3 11l5-4 4 3 8-6"/></svg><span>Indicators</span><span class="caret"></span>
+        </button>
+        <div class="pop" id="indMenu" role="menu" hidden></div>
+      </div>
+      <div class="zoom" role="group" aria-label="Zoom">
+        <button id="zoomOut" type="button" aria-label="Zoom out" title="Zoom out (−)"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M7.5 10.5h6"/></svg></button>
+        <button id="zoomIn" type="button" aria-label="Zoom in" title="Zoom in (+)"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M7.5 10.5h6M10.5 7.5v6"/></svg></button>
+        <button id="zoomReset" type="button" aria-label="Reset zoom" title="Reset zoom (0)"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg></button>
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="plot">
+      <div class="axis-row">
+        <div class="legend" id="legend"></div>
+        <div class="ytitle" id="ytitle" aria-hidden="true">Index level (points)</div>
+      </div>
+      <div class="chartbox" id="chartbox">
+        <div id="chart" role="img" tabindex="0" aria-label="Index chart"></div>
+        <div class="tip" id="tip" hidden></div>
+        <div class="pcl" id="pcl" hidden></div>
+        <div class="loading" id="loading">Loading chart…</div>
+      </div>
+      <div class="xtitle" id="xtitle" aria-hidden="true"></div>
+    </div>
+    <div class="ranges" id="ranges" role="group" aria-label="Time range"></div>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="Index details">
+    <button role="tab" id="tab-overview" aria-selected="true" aria-controls="p-overview">Overview</button>
+    <button role="tab" id="tab-constituents" aria-selected="false" aria-controls="p-constituents">Constituents</button>
+    <button role="tab" id="tab-insights" aria-selected="false" aria-controls="p-insights" aria-label="Key Insights" hidden><span class="lbl-long">Key </span>Insights</button>
+    <button role="tab" id="tab-method" aria-selected="false" aria-controls="p-method" aria-label="Methodology">Method<span class="lbl-long">ology</span></button>
+  </nav>
+
+  <section class="panel" id="p-overview" role="tabpanel" aria-labelledby="tab-overview">
+    <dl class="stats" id="stats"></dl>
+    <div>
+      <h3>Risk and return, past 365 days</h3>
+      <div class="riskwrap infowrap">
+        <div class="risk" id="risk"></div>
+        <div class="infopop" id="infoPop" role="note" hidden></div>
+      </div>
+      <p class="note" id="riskNote"></p>
+    </div>
+    <div>
+      <h3>Sector weights</h3>
+      <div class="sectors" id="sectors"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-constituents" role="tabpanel" aria-labelledby="tab-constituents" hidden>
+    <div class="tools">
+      <div class="seg" id="consView" role="group" aria-label="Show constituents as">
+        <button type="button" data-view="map" aria-pressed="true">Heatmap</button>
+        <button type="button" data-view="table" aria-pressed="false">Table</button>
+      </div>
+      <input id="consSearch" type="search" placeholder="Filter by company or sector" aria-label="Filter constituents">
+      <span id="consCount"></span>
+    </div>
+    <div class="heat" id="heatView">
+      <div class="heat-controls">
+        <div class="seg" id="heatPeriod" role="group" aria-label="Return period">
+          <button type="button" data-hp="1D" aria-pressed="true">1D</button>
+          <button type="button" data-hp="1W" aria-pressed="false">1W</button>
+          <button type="button" data-hp="1M" aria-pressed="false">1M</button>
+          <button type="button" data-hp="YTD" aria-pressed="false">YTD</button>
+          <button type="button" data-hp="1Y" aria-pressed="false">1Y</button>
+        </div>
+        <div class="seg" id="heatGroup" role="group" aria-label="Group companies by">
+          <button type="button" data-hg="sector" aria-pressed="true">By sector</button>
+          <button type="button" data-hg="return" aria-pressed="false">By return</button>
+        </div>
+      </div>
+      <div class="heat-key"><span id="heatBreadth"></span><div class="scale" id="heatScale" aria-hidden="true"></div></div>
+      <div class="heatbox">
+        <div class="heatmap" id="heatmap" role="group" aria-label="Heatmap of index constituents"></div>
+        <div class="heattip" id="heatTip" hidden></div>
+      </div>
+      <div class="movers" id="heatMovers"></div>
+      <p class="note" id="heatNote"></p>
+    </div>
+    <div class="tablewrap" id="tableView" hidden>
+      <table>
+        <thead><tr id="consHead"></tr></thead>
+        <tbody id="consBody"></tbody>
+      </table>
+    </div>
+    <button class="more" id="consMore" type="button" aria-expanded="false" hidden></button>
+  </section>
+
+  <section class="panel" id="p-insights" role="tabpanel" aria-labelledby="tab-insights" hidden>
+    <div class="ins-head">
+      <div class="ins-title">
+        <div class="seg" id="insWin" role="group" aria-label="Insights period">
+          <button type="button" data-win="5" aria-pressed="true" aria-label="Past 5 sessions">1W</button>
+          <button type="button" data-win="10" aria-pressed="false" aria-label="Past 10 sessions">2W</button>
+          <button type="button" data-win="20" aria-pressed="false" aria-label="Past 20 sessions">1M</button>
+        </div>
+        <div><h3 id="insLabel">Past week</h3><div class="ins-range" id="insRange"></div></div>
+      </div>
+      <div class="ins-big" id="insBig"></div>
+    </div>
+    <ul class="ins-lines" id="insLines"></ul>
+    <div class="ins-grid">
+      <div class="ins-card"><h4>Against benchmarks</h4><p class="sub" id="insBenchSub">Change over the same sessions</p><div class="dvs" id="insBench"></div></div>
+      <div class="ins-card"><h4>Day by day</h4><p class="sub">NATI's change each session</p><div class="days" id="insDays"></div></div>
+    </div>
+    <div class="ins-card">
+      <h4>What moved the index</h4>
+      <p class="sub" id="insMoversSub">Index points each company added or took away (its weight going into each session × its move)</p>
+      <div class="movers2" id="insMovers"></div>
+      <p class="note" id="insPct"></p>
+    </div>
+    <div class="ins-card"><h4>By sector</h4><p class="sub" id="insSectorsSub">Index points by sector</p><div class="dvs wide" id="insSectors"></div></div>
+    <div class="ins-card infowrap" id="insCorrCard">
+      <h4 data-anchor>Correlation with benchmarks<button type="button" class="info" data-info="corr" aria-expanded="false"
+        aria-controls="infoPop2" aria-label="What is correlation?"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.2"/></svg></button></h4>
+      <div class="infopop" id="infoPop2" role="note" hidden></div>
+      <p class="sub" id="insCorrSub"></p>
+      <div class="corrlegend" id="insCorrLegend"></div>
+      <div class="corrbox" id="insCorrBox"><svg id="insCorr" role="img"></svg><div class="ctip" id="insCorrTip" hidden></div></div>
+      <details class="corrtable"><summary>Show as a table</summary><div class="tablewrap"><table id="insCorrTable"></table></div></details>
+      <p class="note" id="insCorrNote"></p>
+    </div>
+  </section>
+
+  <section class="panel" id="p-method" role="tabpanel" aria-labelledby="tab-method" hidden>
+    <div class="method" id="method"></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script src="vendor/lightweight-charts-5.0.9.standalone.production.js"></script>
+<script>
+(() => {
+"use strict";
+const LWC = window.LightweightCharts;
+const DATA = "data/";
+const MAX_COMPARE = 4;
+const RANGES = [
+  { id: "1D", label: "1D", phrase: "Today" },
+  { id: "5D", label: "5D", phrase: "past 5 days" },
+  { id: "1M", label: "1M", phrase: "past month" },
+  { id: "6M", label: "6M", phrase: "past 6 months" },
+  { id: "YTD", label: "YTD", phrase: "year to date" },
+  { id: "1Y", label: "1Y", phrase: "past year" },
+  { id: "5Y", label: "5Y", phrase: "past 5 years" },
+  { id: "MAX", label: "MAX", phrase: "since launch base" },
+];
+const TYPES = [
+  { id: "line", label: "Line", icon: '<path d="M3 17l6-6 4 4 8-8"/>' },
+  { id: "area", label: "Area", icon: '<path d="M3 19V13l5-5 4 4 5-6 4 3v10z"/><path d="M3 13l5-5 4 4 5-6 4 3"/>' },
+  { id: "candle", label: "Candle", icon: '<path d="M8 3v4M8 15v6M16 3v6M16 17v4"/><rect x="5.5" y="7" width="5" height="8" rx="1"/><rect x="13.5" y="9" width="5" height="8" rx="1"/>' },
+  { id: "bar", label: "Bar", icon: '<path d="M6 20V11M12 20V5M18 20V14"/><path d="M4 11h2M12 8h2M10 5h2M16 14h2M18 17h2"/>' },
+];
+const INDICATORS = [
+  { id: "ma", label: "Moving average", sub: "20 sessions intraday and 1M · 50 sessions on longer ranges" },
+  { id: "macd", label: "Moving average convergence divergence", sub: "MACD 12, 26, 9 · shown below the chart" },
+  { id: "env", label: "Moving average envelope", sub: "20-period average ± 2.5%" },
+];
+const ARROW = '<svg viewBox="0 0 24 24"><path d="M12 4l7 8h-5v8h-4v-8H5z"/></svg>';
+
+const state = {
+  range: "1D", type: "area", compares: [], ind: { ma: false, macd: false, env: false },
+  sortKey: "weight", sortDir: -1, consFilter: "", consAll: false, consView: "map", insWin: "5", heatPeriod: "1D", heatGroup: "sector",
+};
+let IDX, SYMBOLS, CONS, REVIEWS;
+// The reader's view (range, chart type, comparisons, indicators, tab, constituents view) is kept
+// for the browser tab's session, so a reload or a trip to a company profile and back keeps it
+const STORE_KEY = "nati:v2:index";
+function saveState() {
+  try {
+    const tab = document.querySelector('[role="tab"][aria-selected="true"]');
+    sessionStorage.setItem(STORE_KEY, JSON.stringify({ range: state.range, type: state.type, compares: state.compares,
+      ind: state.ind, sortKey: state.sortKey, sortDir: state.sortDir, consView: state.consView, insWin: state.insWin, heatPeriod: state.heatPeriod, heatGroup: state.heatGroup, tab: tab ? tab.id : null }));
+  } catch (e) { /* storage blocked (private mode, partitioned iframe): the view simply isn't remembered */ }
+}
+// Restores what is still valid against the current data; returns the saved tab id
+function restoreState() {
+  let s = null;
+  try { s = JSON.parse(sessionStorage.getItem(STORE_KEY) || "null"); } catch (e) {}
+  if (!s || typeof s !== "object") return null;
+  if (RANGES.some((r) => r.id === s.range)) state.range = s.range;
+  if (TYPES.some((t) => t.id === s.type)) state.type = s.type;
+  if (Array.isArray(s.compares)) state.compares = s.compares.filter((id) => findSymbol(id)).slice(0, MAX_COMPARE);
+  if (s.ind) for (const k of Object.keys(state.ind)) state.ind[k] = !!s.ind[k];
+  if (COLS.some((c) => c.key === s.sortKey)) { state.sortKey = s.sortKey; state.sortDir = s.sortDir === 1 ? 1 : -1; }
+  if (s.consView === "map" || s.consView === "table") state.consView = s.consView;
+  if (["5", "10", "20"].includes(s.insWin)) state.insWin = s.insWin;
+  if (["1D", "1W", "1M", "YTD", "1Y"].includes(s.heatPeriod)) state.heatPeriod = s.heatPeriod;
+  if (s.heatGroup === "sector" || s.heatGroup === "return") state.heatGroup = s.heatGroup;
+  return typeof s.tab === "string" ? s.tab : null;
+}
+// Companies with a profile page (data/companies/index.json); none when the list is missing
+let PROFILES = new Set();
+let RETURNS = {};       // id -> {"1W", "1M", "YTD", "1Y", since?}: the heatmap's longer periods
+const profileHref = (id) => {
+  const q = new URLSearchParams({ id });
+  const t = new URLSearchParams(location.search).get("theme");
+  if (t) q.set("theme", t);
+  return "company.html?" + q + "#" + id;     // the hash carries the id where a host drops the query
+};
+const seriesCache = new Map();
+let chart = null;
+
+const $ = (s) => document.querySelector(s);
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const nf2 = new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nf0 = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+const fmt = (v) => nf2.format(v);
+const pct = (v, d = 2) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v * 100).toFixed(d) + "%";
+const signed = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + nf2.format(Math.abs(v));
+const lakhCr = (cr) => "₹" + (cr / 1e5).toFixed(2) + "L Cr";
+const ratio = (v) => (v == null ? "—" : (v < 0 ? "−" : "") + Math.abs(v).toFixed(2));
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const dstr = (s) => { const [y, m, d] = s.split("-").map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
+const clock = (sec) => { const d = new Date(sec * 1000); let h = d.getUTCHours(); const m = d.getUTCMinutes();
+  const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return `${h}:${String(m).padStart(2, "0")} ${ap}`; };
+const dayOf = (sec) => { const d = new Date(sec * 1000); return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+
+async function getJSON(path) {
+  const r = await fetch(DATA + path, { cache: "no-cache" });
+  if (!r.ok) throw new Error(`${path}: ${r.status}`);
+  return r.json();
+}
+// Every constituent with a profile can be compared too, in weight order
+function constituentSymbols() {
+  return [...CONS].filter((c) => PROFILES.has(c.id)).sort((a, b) => b.weight - a.weight).map((c) => ({
+    id: c.id, name: c.company, sub: `${c.ticker} · ${c.sector}`,
+    kind: "constituent", region: "IN", intraday: true, last: c.price, change_pct: c.change_pct, rupee: true }));
+}
+const findSymbol = (id) => SYMBOLS.find((s) => s.id === id) || constituentSymbols().find((s) => s.id === id);
+const isConstituent = (id) => CONS.some((c) => c.id === id);
+async function getSeries(id) {
+  if (!seriesCache.has(id)) {
+    // a company's prices come from its profile file, reshaped like an index series
+    const p = isConstituent(id)
+      ? getJSON(`companies/${id}.json`).then((d) => ({ id, name: d.company, daily: d.daily.map((r) => [r[0], r[4]]), sessions: d.sessions }))
+      : getJSON(`series/${id}.json`);
+    p.catch(() => seriesCache.delete(id));
+    seriesCache.set(id, p);
+  }
+  return seriesCache.get(id);
+}
+// One entry per comparison; null where the file could not be loaded (the chart still draws)
+async function loadCompares() {
+  const res = await Promise.allSettled(state.compares.map(getSeries));
+  return res.map((x) => (x.status === "fulfilled" ? x.value : null));
+}
+// A compare index on NATI's own sessions: the last close on or before each date
+// (Indian and US markets keep different holidays, and US closes come later in the day)
+function alignDaily(rows, dates) {
+  const out = []; let i = -1;
+  for (const d of dates) {
+    while (i + 1 < rows.length && rows[i + 1][0] <= d) i++;
+    if (i >= 0) out.push({ time: d, value: rows[i][1] });
+  }
+  return out;
+}
+const shortDate = (s) => { const [, m, d] = s.split("-").map(Number); return `${d} ${MONTHS[m - 1]}`; };
+// "Live" only while the market is open and the last refresh is recent; a stalled refresh
+// must not keep showing a live dot
+const isLive = () => IDX.market_open &&
+  Date.now() - new Date(IDX.as_of).getTime() < ((IDX.refresh_minutes || 20) + 45) * 60000;
+
+/* ---------------- range maths ---------------- */
+const isIntraday = (r) => r === "1D" || r === "5D";
+function rangeStart(lastDate, r) {
+  const d = new Date(lastDate + "T00:00:00Z");
+  const back = { "1M": [0, 1], "6M": [0, 6], "1Y": [1, 0], "5Y": [5, 0] }[r];
+  if (back) { d.setUTCFullYear(d.getUTCFullYear() - back[0]); d.setUTCMonth(d.getUTCMonth() - back[1]); }
+  if (r === "YTD") return `${d.getUTCFullYear() - 1}-12-31`;
+  if (r === "MAX") return "0000-00-00";
+  return d.toISOString().slice(0, 10);
+}
+// daily rows [[date, ...]] → slice from the last row on or before the range start (the anchor)
+function sliceDaily(rows, r, lastDate) {
+  const start = rangeStart(lastDate, r);
+  let i = 0;
+  for (let k = 0; k < rows.length; k++) { if (rows[k][0] <= start) i = k; else break; }
+  return rows.slice(i);
+}
+// intraday sessions → points plus the baseline (previous close)
+function sliceSessions(sessions, r) {
+  const use = r === "1D" ? sessions.slice(-1) : sessions.slice(-5);
+  if (!use.length) return null;
+  const pts = use.flatMap((s) => s.points);
+  return { pts, base: use[0].prev_close ?? pts[0][1], dates: use.map((s) => s.date) };
+}
+
+function indexView(r) {
+  if (isIntraday(r)) {
+    const s = sliceSessions(IDX.sessions, r);
+    return { kind: "intraday", pts: s.pts.map(([t, v]) => ({ time: t, value: v })), base: s.base, dates: s.dates };
+  }
+  const rows = sliceDaily(IDX.daily, r, IDX.session_date);
+  return {
+    kind: "daily",
+    pts: rows.map((x) => ({ time: x[0], value: x[4] })),
+    ohlc: rows.map((x) => ({ time: x[0], open: x[1], high: x[2], low: x[3], close: x[4] })),
+    base: rows[0][4],
+  };
+}
+
+// Candles for intraday ranges, built from the index's own 5-minute path
+function intradayCandles(pts, minutes) {
+  const out = []; let cur = null; let prev = null;
+  for (const p of pts) {
+    const b = Math.floor(p.time / (minutes * 60)) * minutes * 60;
+    if (!cur || cur.time !== b) {
+      if (cur) out.push(cur);
+      const o = prev && dayOf(prev.time) === dayOf(p.time) ? prev.value : p.value;
+      cur = { time: b, open: o, high: Math.max(o, p.value), low: Math.min(o, p.value), close: p.value };
+    } else {
+      cur.high = Math.max(cur.high, p.value); cur.low = Math.min(cur.low, p.value); cur.close = p.value;
+    }
+    prev = p;
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+/* ---------------- indicators ---------------- */
+function sma(vals, n) { const out = new Array(vals.length).fill(null); let s = 0;
+  for (let i = 0; i < vals.length; i++) { s += vals[i]; if (i >= n) s -= vals[i - n]; if (i >= n - 1) out[i] = s / n; } return out; }
+function ema(vals, n) { const out = new Array(vals.length).fill(null); const k = 2 / (n + 1); let e = null;
+  for (let i = 0; i < vals.length; i++) { if (vals[i] == null) continue; e = e == null ? vals[i] : vals[i] * k + e * (1 - k); out[i] = i >= n - 1 ? e : null; } return out; }
+// Full-history series for the active granularity, so indicators are warmed up at the range start
+function fullIndexSeries(r) {
+  if (isIntraday(r)) return IDX.sessions.flatMap((s) => s.points).map(([t, v]) => ({ time: t, value: v }));
+  return IDX.daily.map((x) => ({ time: x[0], value: x[4] }));
+}
+
+/* ---------------- header ---------------- */
+function renderHeader(view) {
+  const last = isIntraday(state.range) ? IDX.last : view.pts[view.pts.length - 1].value;
+  const ch = last - view.base;
+  const up = ch >= 0;
+  $("#last").textContent = fmt(isIntraday(state.range) ? IDX.last : last);
+  const phrase = RANGES.find((x) => x.id === state.range).phrase;
+  const el = $("#chg");
+  el.className = "chg " + (up ? "up" : "down");
+  el.innerHTML = `<span class="dot" aria-hidden="true">${ARROW}</span><span class="num">${pct(ch / view.base)} (${signed(ch)})</span><span>${phrase}</span>`;
+  renderStamp();
+}
+function renderStamp() {
+  const t = new Date(IDX.as_of);
+  const when = t.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  $("#stamp").innerHTML = isLive()
+    ? `<span class="live">${when} IST</span> · Delayed · <span class="nw">Updates every ${IDX.refresh_minutes || 20} minutes</span>`
+    : IDX.market_open ? `As of ${when} IST · Delayed` : `${when} IST · At close`;
+}
+
+/* ---------------- chart ---------------- */
+function themeColors() {
+  return {
+    surface: css("--card"), ink: css("--ink"), ink2: css("--ink-2"), muted: css("--muted"), hair: css("--hair"),
+    up: css("--up-line"), upFill: css("--up-fill"), down: css("--down-line"), downFill: css("--down-fill"),
+    s: [css("--s1"), css("--s2"), css("--s3"), css("--s4"), css("--s5")], font: css("--font"),
+  };
+}
+function transparent(c) { return c.startsWith("rgba") ? c.replace(/[\d.]+\)$/, "0)") : c + "00"; }
+
+let renderToken = 0;
+let chartSlots = 0, dataSlots = 0, chartFit = null, zoomMemo = null;
+// The reader's zoom (a visible time range), or null when the whole range is shown. Only
+// recorded once a new chart has settled, so its initial default view never counts as a zoom.
+let zoomState = null, settling = false;
+const MIN_ZOOM_SLOTS = 8;
+
+function isZoomed() {
+  if (!chart) return false;
+  const lr = chart.timeScale().getVisibleLogicalRange();
+  return !!lr && lr.to - lr.from < (chartSlots - 1) * 0.98;
+}
+function updateZoomUI() {
+  const lr = chart && chart.timeScale().getVisibleLogicalRange();
+  const w = lr ? lr.to - lr.from : 0;
+  const zoomed = isZoomed();
+  $("#zoomIn").disabled = !lr || w <= Math.min(MIN_ZOOM_SLOTS, chartSlots - 1) + 0.5;
+  $("#zoomOut").disabled = !zoomed;
+  $("#zoomReset").disabled = !zoomed;
+  $("#chartbox").classList.toggle("zoomed", zoomed);
+}
+// f < 1 zooms in, f > 1 zooms out. Zooming keeps the latest data in view when it already is.
+function zoomBy(f) {
+  if (!chart) return;
+  const ts = chart.timeScale();
+  const lr = ts.getVisibleLogicalRange();
+  if (!lr) return;
+  const max = chartSlots - 1, end = dataSlots - 1;
+  const nw = Math.max(Math.min(MIN_ZOOM_SLOTS, max), Math.min(max, (lr.to - lr.from) * f));
+  if (nw >= max * 0.98) { chartFit(); return; }
+  let to = lr.to >= end - 0.5 ? end : (lr.from + lr.to) / 2 + nw / 2;
+  let from = to - nw;
+  if (from < 0) { from = 0; to = nw; }
+  if (to > max) { to = max; from = max - nw; }
+  ts.setVisibleLogicalRange({ from, to });
+}
+function panBy(frac) {
+  if (!chart || !isZoomed()) return;
+  const ts = chart.timeScale();
+  const lr = ts.getVisibleLogicalRange();
+  const w = lr.to - lr.from, max = chartSlots - 1;
+  const from = Math.max(0, Math.min(max - w, lr.from + w * frac));
+  ts.setVisibleLogicalRange({ from, to: from + w });
+}
+
+async function renderChart() {
+  const token = ++renderToken;
+  saveState();
+  const r = state.range;
+  const view = indexView(r);
+  renderHeader(view);
+  const comparing = state.compares.length > 0;
+  const compareData = comparing ? await loadCompares() : [];
+  if (token !== renderToken) return;
+  // A redraw of the same view (indicator toggled, theme change, resize) keeps the zoom
+  const zoomKey = `${r}|${comparing ? "cmp" : state.type}`;
+  const keep = zoomMemo === zoomKey ? zoomState : null;
+  if (!keep) zoomState = null;
+
+  const C = themeColors();
+  const el = $("#chart");
+  $("#tip").hidden = true;
+  el.classList.toggle("with-macd", state.ind.macd);
+  if (chart) { chart.remove(); chart = null; }
+  $("#loading").hidden = true;
+
+  const intraday = view.kind === "intraday";
+  chart = LWC.createChart(el, {
+    autoSize: true,
+    layout: { background: { type: "solid", color: C.surface }, textColor: C.muted, fontFamily: C.font, fontSize: 12,
+      attributionLogo: false, panes: { separatorColor: C.hair, enableResize: false } },
+    grid: { vertLines: { visible: false }, horzLines: { color: C.hair } },
+    rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.06 } },
+    timeScale: { borderVisible: false, timeVisible: intraday, secondsVisible: false, rightOffset: 0,
+      fixLeftEdge: true, fixRightEdge: true,
+      lockVisibleTimeRangeOnResize: true,
+      tickMarkFormatter: (time, type) => {
+        if (typeof time === "number") return type === LWC.TickMarkType.Time ? clock(time) : dayOf(time);
+        const s = typeof time === "string" ? time : `${time.year}-${String(time.month).padStart(2, "0")}-${String(time.day).padStart(2, "0")}`;
+        const [y, m, d] = s.split("-").map(Number);
+        if (type === LWC.TickMarkType.Year) return String(y);
+        if (type === LWC.TickMarkType.Month) return MONTHS[m - 1];
+        return `${MONTHS[m - 1]} ${d}`;
+      } },
+    crosshair: { mode: LWC.CrosshairMode.Normal,
+      vertLine: { color: C.muted, width: 1, style: LWC.LineStyle.Solid, labelVisible: false },
+      horzLine: { color: C.muted, width: 1, style: LWC.LineStyle.Dashed, labelBackgroundColor: C.ink2 } },
+    // Wheel scrolling is left to the page (the widget sits inside articles). Zoom with the
+    // buttons, Ctrl/⌘ + wheel, a pinch, or by dragging the date axis; drag the chart to pan.
+    handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+    handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: { time: true, price: false },
+      axisDoubleClickReset: { time: true, price: true } },
+    localization: { locale: "en-IN", priceFormatter: (v) => comparing ? (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%" : fmt(v) },
+  });
+
+  const up = view.pts[view.pts.length - 1].value >= view.base;
+  const lineCol = comparing ? C.s[0] : up ? C.up : C.down;
+  const toPct = (v, base) => (v / base - 1) * 100;
+  const legend = [];
+  const tipSeries = [];       // [{series, label, color, kind}]
+  let main, mainData = [], padSlots = 0;
+  let natiBase = view.base;              // a comparison may start NATI later than the range start
+
+  if (comparing) {
+    // Each comparison's points over the view: intraday sessions, or daily closes on NATI's dates
+    const lines = compareData.map((sd) => {
+      if (!sd) return null;                              // failed to load; the chip says so
+      if (intraday) {
+        const sess = sliceSessions(sd.sessions || [], r);
+        return sess ? { sd, pts: sess.pts.map(([t, v]) => ({ time: t, value: v })), base: sess.base } : null;  // daily-only index
+      }
+      const pts = alignDaily(sd.daily, view.pts.map((p) => p.time));
+      return pts.length ? { sd, pts } : null;
+    });
+    // A company listed after the start of the range has a shorter history: every line then starts
+    // on the latest first date, so all the percentages cover the same days
+    let from = view.pts[0].time;
+    if (!intraday) for (const l of lines) if (l && l.pts[0].time > from) from = l.pts[0].time;
+    const own = view.pts.filter((p) => p.time >= from);
+    natiBase = from === view.pts[0].time ? view.base : own[0].value;
+    main = chart.addSeries(LWC.LineSeries, { color: lineCol, lineWidth: 2, priceLineVisible: false, crosshairMarkerRadius: 4 });
+    mainData = own.map((p) => ({ time: p.time, value: toPct(p.value, natiBase) }));
+    main.setData(mainData);
+    tipSeries.push({ series: main, label: "NATI", color: lineCol, pct: true });
+    // each line's change over the period sits in the legend, as on the company profile
+    const endPct = (d) => { const v = d[d.length - 1].value; return (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%"; };
+    legend.push(`<span><i style="border-color:${lineCol}"></i>NATI <b>${endPct(mainData)}</b></span>`);
+    lines.forEach((l, k) => {
+      if (!l) return;
+      const col = C.s[k + 1];
+      const pts = intraday ? l.pts : l.pts.filter((p) => p.time >= from);
+      const base = intraday ? l.base : pts[0].value;
+      const s = chart.addSeries(LWC.LineSeries, { color: col, lineWidth: 2, priceLineVisible: false, crosshairMarkerRadius: 4 });
+      const line = pts.map((p) => ({ time: p.time, value: toPct(p.value, base) }));
+      s.setData(line);
+      tipSeries.push({ series: s, label: l.sd.name, color: col, pct: true });
+      legend.push(`<span><i style="border-color:${col}"></i>${l.sd.name} <b>${endPct(line)}</b></span>`);
+    });
+    if (from !== view.pts[0].time) {
+      const late = lines.filter((l) => l && l.pts[0].time === from).map((l) => l.sd.name);
+      legend.push(`<span class="from">From ${dstr(from)}, when ${late.join(" and ")} ${late.length > 1 ? "were" : "was"} listed</span>`);
+    }
+  } else if (state.type === "candle" || state.type === "bar") {
+    const data = intraday ? intradayCandles(view.pts, r === "1D" ? 15 : 60) : view.ohlc;
+    const def = state.type === "candle" ? LWC.CandlestickSeries : LWC.BarSeries;
+    const opts = state.type === "candle"
+      ? { upColor: C.up, downColor: C.down, borderVisible: false, wickUpColor: C.up, wickDownColor: C.down, priceLineVisible: false }
+      : { upColor: C.up, downColor: C.down, thinBars: false, priceLineVisible: false };
+    main = chart.addSeries(def, opts);
+    mainData = data;
+    main.setData(data);
+    tipSeries.push({ series: main, label: "NATI", color: lineCol, ohlc: true });
+  } else if (state.type === "line") {
+    main = chart.addSeries(LWC.LineSeries, { color: lineCol, lineWidth: 2, priceLineVisible: false, crosshairMarkerRadius: 4 });
+    mainData = view.pts;
+    main.setData(mainData);
+    tipSeries.push({ series: main, label: "NATI", color: lineCol });
+  } else {
+    main = chart.addSeries(LWC.AreaSeries, { lineColor: lineCol, topColor: up ? C.upFill : C.downFill,
+      bottomColor: transparent(up ? C.upFill : C.downFill), lineWidth: 2, priceLineVisible: false, crosshairMarkerRadius: 4 });
+    mainData = view.pts;
+    main.setData(mainData);
+    tipSeries.push({ series: main, label: "NATI", color: lineCol });
+  }
+
+  // Whitespace to the end of today's session so the 1D chart spans 9:15 AM–3:30 PM
+  if (intraday && r === "1D" && isLive()) {
+    const lastT = view.pts[view.pts.length - 1].time;
+    const close = lastT - (lastT % 86400) + (15 * 60 + 30) * 60;
+    const ws = [];
+    const step = state.type === "candle" || state.type === "bar" ? (comparing ? 300 : 900) : 300;
+    for (let t = lastT + step; t < close; t += step) ws.push({ time: t });
+    if (ws.length) {
+      main.setData([...mainData, ...ws]); padSlots = ws.length;
+      // fixRightEdge stops at the last real bar, which would push the line to the right edge
+      // and leave the morning blank; the range handler below keeps the right edge at 3:30 PM
+      chart.applyOptions({ timeScale: { fixRightEdge: false } });
+    }
+  }
+
+  // Previous close reference on intraday ranges
+  const pcl = $("#pcl");
+  pcl.hidden = true;
+  if (intraday && !comparing) {
+    main.createPriceLine({ price: view.base, color: C.muted, lineWidth: 1, lineStyle: LWC.LineStyle.SparseDotted,
+      axisLabelVisible: false, title: "" });
+    // Keep the reference line inside the price scale, so it never sits off the chart
+    main.applyOptions({ autoscaleInfoProvider: (orig) => {
+      const res = orig();
+      if (!res || !res.priceRange) return res;
+      return { ...res, priceRange: { minValue: Math.min(res.priceRange.minValue, view.base),
+                                     maxValue: Math.max(res.priceRange.maxValue, view.base) } };
+    } });
+    pcl.innerHTML = `${r === "1D" ? "Prev. close" : "Close before period"} <b>${fmt(view.base)}</b>`;
+    const owner = chart;
+    const placePcl = () => {
+      if (chart !== owner) return;                    // a newer chart has replaced this one
+      const y = main.priceToCoordinate(view.base);
+      if (y == null) { pcl.hidden = true; return; }
+      pcl.style.top = y + "px";
+      pcl.classList.toggle("below", y < 24);          // no room above the line: label goes under it
+      pcl.hidden = false;
+    };
+    requestAnimationFrame(placePcl);
+    chart.timeScale().subscribeVisibleLogicalRangeChange(() => requestAnimationFrame(placePcl));
+  }
+
+  // Indicators on the index (price, or % when comparing)
+  const full = fullIndexSeries(r);
+  const firstTime = (comparing ? mainData[0] : view.pts[0]).time;
+  const startAt = full.findIndex((p) => p.time === firstTime);
+  const vals = full.map((p) => p.value);
+  const tx = (v) => (comparing ? toPct(v, natiBase) : v);
+  const showFrom = (arr) => arr.map((v, i) => ({ time: full[i].time, value: v })).slice(Math.max(startAt, 0)).filter((p) => p.value != null).map((p) => ({ time: p.time, value: tx(p.value) }));
+  const maN = r === "1D" || r === "5D" || r === "1M" ? 20 : 50;
+  if (state.ind.ma) {
+    const s = chart.addSeries(LWC.LineSeries, { color: C.ink2, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+    s.setData(showFrom(sma(vals, maN)));
+    legend.push(`<span><i style="border-color:${C.ink2}"></i>MA ${maN}</span>`);
+    tipSeries.push({ series: s, label: `MA ${maN}`, color: C.ink2, pct: comparing, quiet: true });
+  }
+  if (state.ind.env) {
+    const m = sma(vals, 20);
+    for (const f of [1.025, 0.975]) {
+      const s = chart.addSeries(LWC.LineSeries, { color: C.muted, lineWidth: 1, lineStyle: LWC.LineStyle.Dashed, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+      s.setData(showFrom(m.map((v) => (v == null ? null : v * f))));
+    }
+    legend.push(`<span><i class="dash" style="border-color:${C.muted}"></i>Envelope 20 ± 2.5%</span>`);
+  }
+  if (state.ind.macd) {
+    const e12 = ema(vals, 12), e26 = ema(vals, 26);
+    const macd = vals.map((_, i) => (e12[i] != null && e26[i] != null ? e12[i] - e26[i] : null));
+    const firstMacd = macd.findIndex((v) => v != null);
+    const sig = new Array(vals.length).fill(null);
+    if (firstMacd >= 0) ema(macd.slice(firstMacd), 9).forEach((v, i) => (sig[firstMacd + i] = v));
+    const pick = (arr) => arr.map((v, i) => ({ time: full[i].time, value: v })).slice(Math.max(startAt, 0)).filter((p) => p.value != null);
+    const hist = macd.map((v, i) => (v != null && sig[i] != null ? v - sig[i] : null));
+    const h = chart.addSeries(LWC.HistogramSeries, { priceLineVisible: false, lastValueVisible: false, priceFormat: { type: "price", precision: 2, minMove: 0.01 } }, 1);
+    h.setData(pick(hist).map((p) => ({ ...p, color: p.value >= 0 ? C.upFill : C.downFill })));
+    const ml = chart.addSeries(LWC.LineSeries, { color: C.s[0], lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }, 1);
+    ml.setData(pick(macd));
+    const sl = chart.addSeries(LWC.LineSeries, { color: C.s[1], lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }, 1);
+    sl.setData(pick(sig));
+    const panes = chart.panes();
+    if (panes[1]) panes[1].setHeight(el.clientHeight > 380 ? 96 : 80);
+    legend.push(`<span><i style="border-color:${C.s[0]}"></i>MACD</span><span><i style="border-color:${C.s[1]}"></i>Signal</span>`);
+    tipSeries.push({ series: ml, label: "MACD", color: C.s[0], quiet: true, raw: true });
+  }
+
+  // Whole range in view unless zoomed; refit after a resize only when not zoomed
+  dataSlots = mainData.length;
+  chartSlots = dataSlots + padSlots;
+  const ts = chart.timeScale();
+  chartFit = () => (padSlots ? ts.setVisibleLogicalRange({ from: 0, to: chartSlots - 1 }) : ts.fitContent());
+  settling = true;
+  chartFit();
+  if (keep) { try { ts.setVisibleRange(keep); } catch (e) { chartFit(); } }
+  zoomMemo = zoomKey;
+  const thisChart = chart;
+  // a timer, not animation frames: frames pause in hidden tabs and off-screen iframes
+  setTimeout(() => {
+    if (chart !== thisChart) return;
+    settling = false;
+    updateZoomUI();
+  }, 120);
+  ts.subscribeSizeChange(() => { if (!zoomState) chartFit(); });
+  ts.subscribeVisibleLogicalRangeChange(() => {
+    const lr = padSlots && ts.getVisibleLogicalRange();
+    if (lr && lr.to > chartSlots - 0.5) {            // panned or zoomed out past the session close
+      ts.setVisibleLogicalRange({ from: Math.max(0, lr.from - (lr.to - (chartSlots - 1))), to: chartSlots - 1 });
+      return;
+    }
+    if (!settling) zoomState = isZoomed() ? ts.getVisibleRange() : null;
+    updateZoomUI();
+  });
+  $("#ytitle").textContent = comparing ? "Change since start of period (%)" : "Index level (points)";
+  $("#xtitle").textContent = r === "1D" ? "Time (IST)" : r === "5D" ? "Date and time (IST)" : "Date";
+  $("#legend").innerHTML = legend.join("");
+  el.setAttribute("aria-label", `NATI ${RANGES.find((x) => x.id === r).phrase}: from ${fmt(view.base)} to ${fmt(view.pts[view.pts.length - 1].value)}`);
+  renderChips(compareData, intraday);
+  wireTooltip(tipSeries, intraday, comparing, view.base);
+}
+
+function wireTooltip(tipSeries, intraday, comparing, base) {
+  const tip = $("#tip");
+  chart.subscribeCrosshairMove((p) => {
+    if (!p || p.time == null || !p.point || p.point.x < 0) { tip.hidden = true; return; }
+    const rows = [];
+    for (const t of tipSeries) {
+      const d = p.seriesData.get(t.series);
+      if (!d) continue;
+      if (t.ohlc) {
+        rows.push(`<div class="row"><span>Open</span><b>${fmt(d.open)}</b></div><div class="row"><span>High</span><b>${fmt(d.high)}</b></div><div class="row"><span>Low</span><b>${fmt(d.low)}</b></div><div class="row"><span>Close</span><b>${fmt(d.close)}</b></div>`);
+      } else if (t.pct) {
+        const v = d.value;
+        rows.push(`<div class="row"><span><i style="background:${t.color}"></i>${t.label}</span><b class="${v >= 0 ? "up" : "down"}">${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}%</b></div>`);
+      } else if (t.quiet) {
+        rows.push(`<div class="row"><span>${t.label}</span><span>${fmt(d.value)}</span></div>`);
+      } else {
+        const ch = d.value / base - 1;
+        rows.push(`<div class="row"><b style="font-size:15px">${fmt(d.value)}</b><span class="${ch >= 0 ? "up" : "down"}">${pct(ch)}</span></div>`);
+      }
+    }
+    if (!rows.length) { tip.hidden = true; return; }
+    const tl = typeof p.time === "number" ? `${dayOf(p.time)}, ${clock(p.time)}` : dstr(p.time);
+    tip.innerHTML = `<div class="t">${tl}</div>${rows.join("")}`;
+    tip.hidden = false;
+    const w = $("#chart").clientWidth;
+    const half = tip.offsetWidth / 2;
+    tip.style.left = Math.min(Math.max(p.point.x, half + 4), w - half - 60) + "px";
+  });
+}
+
+/* ---------------- compare ---------------- */
+function renderChips(compareData, intraday) {
+  const C = themeColors();
+  const self = state.compares.length ? `<span class="chip"><i style="background:${C.s[0]}"></i>NATI</span>` : "";
+  $("#chips").innerHTML = self + state.compares.map((id, k) => {
+    const sym = findSymbol(id);
+    const sd = compareData[k];
+    const failed = !sd;
+    const dailyOnly = !failed && intraday && !(sd.sessions || []).length;
+    const why = failed ? "Could not load. Try again later" : dailyOnly ? "Daily data only. Pick 1M or longer" : "";
+    const tag = failed ? " · unavailable" : dailyOnly ? " · 1M and longer" : "";
+    return `<span class="chip${why ? " na" : ""}" title="${why}"><i style="background:${C.s[k + 1]}"></i>${sym ? sym.name : id}${tag}<button aria-label="Remove ${sym ? sym.name : id}" data-rm="${id}">×</button></span>`;
+  }).join("");
+}
+function symRow(s) {
+  const on = state.compares.includes(s.id);
+  const full = !on && state.compares.length >= MAX_COMPARE;
+  const dailyOnly = !on && isIntraday(state.range) && !s.intraday;
+  const k = state.compares.indexOf(s.id);
+  const dir = s.change_pct >= 0 ? "up" : "down";
+  const sub = s.region === "US" && s.last_date ? `${s.sub} · ${shortDate(s.last_date)} close` : s.sub;
+  return `<button class="sym" data-id="${s.id}" aria-pressed="${on}" ${full || dailyOnly ? "disabled" : ""}>
+    <span class="n">${on ? `<i style="background:var(--s${k + 2})"></i>` : ""}<span>${s.name}</span></span>
+    <span class="v">${s.rupee ? "₹" : ""}${fmt(s.last)}</span>
+    <span class="s">${sub}</span>
+    <span class="p ${dir}">${pct(s.change_pct)}<b aria-hidden="true">${ARROW}</b></span>
+    ${dailyOnly ? `<span class="why">Trades outside Indian hours. Pick 1M or longer to compare.</span>` : ""}</button>`;
+}
+function renderCompareList() {
+  const q = $("#cmpSearch").value.trim().toLowerCase();
+  const match = (s) => !q || s.name.toLowerCase().includes(q) || s.sub.toLowerCase().includes(q) || s.id.toLowerCase().includes(q);
+  const india = SYMBOLS.filter((s) => s.region !== "US" && match(s));
+  const us = SYMBOLS.filter((s) => s.region === "US" && match(s));
+  const cos = constituentSymbols().filter(match);
+  let html = "";
+  if (india.length) html += `<div class="group">Indian indices</div>` + india.map(symRow).join("");
+  if (us.length) html += `<div class="group">US indices · daily</div>` + us.map(symRow).join("");
+  if (cos.length) html += `<div class="group">NATI constituents${q ? "" : ` · ${cos.length}`}</div>` + cos.map(symRow).join("");
+  const safe = q.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
+  if (!html) html = `<div class="empty">No index or company matches “${safe}”.</div>`;
+  if (state.compares.length >= MAX_COMPARE) html = `<div class="group">Up to ${MAX_COMPARE} comparisons. Remove one to add another.</div>` + html;
+  $("#cmpList").innerHTML = html;
+}
+function toggleCompare(id) {
+  const i = state.compares.indexOf(id);
+  if (i >= 0) state.compares.splice(i, 1);
+  else if (state.compares.length < MAX_COMPARE) state.compares.push(id);
+  renderTypeMenu();
+  renderCompareList();
+  renderChart();
+}
+
+/* ---------------- menus ---------------- */
+function renderTypeMenu() {
+  const t = TYPES.find((x) => x.id === state.type);
+  const comparing = state.compares.length > 0;
+  $("#typeIcon").innerHTML = `<svg class="ic" viewBox="0 0 24 24">${(comparing ? TYPES[0] : t).icon}</svg>`;
+  $("#typeLabel").textContent = comparing ? "Line" : t.label;
+  $("#typeBtn").disabled = comparing;
+  $("#typeBtn").title = comparing ? "Comparisons are drawn as lines" : "";
+  $("#typeMenu").innerHTML = TYPES.map((x) => `<button class="menu-item" role="menuitemradio" aria-checked="${x.id === state.type}" data-type="${x.id}">
+      <svg viewBox="0 0 24 24" style="${x.id === state.type ? "stroke:var(--focus);stroke-width:2.4" : ""}">${x.id === state.type ? '<path d="M4 12.5l5 5L20 6.5"/>' : x.icon}</svg><span>${x.label}</span></button>`).join("");
+}
+function renderIndMenu() {
+  $("#indMenu").innerHTML = INDICATORS.map((x) => `<button class="menu-item" role="menuitemcheckbox" aria-checked="${state.ind[x.id]}" data-ind="${x.id}">
+      <span class="check">✓</span><span>${x.label}<small>${x.sub}</small></span></button>`).join("");
+}
+function openPop(btn, pop, open) {
+  for (const [b, p] of [["#typeBtn", "#typeMenu"], ["#cmpBtn", "#cmpPop"], ["#indBtn", "#indMenu"]]) {
+    const on = open && $(b) === btn;
+    $(b).setAttribute("aria-expanded", on);
+    $(p).hidden = !on;
+  }
+  if (open && pop.id === "cmpPop") { renderCompareList(); setTimeout(() => $("#cmpSearch").focus(), 0); }
+  else if (open) { const first = pop.querySelector("button"); if (first) first.focus(); }
+}
+
+/* ---------------- ranges ---------------- */
+function renderRanges() {
+  const first = IDX.daily[0][0];
+  $("#ranges").innerHTML = RANGES.map((r) => {
+    const unavailable = !isIntraday(r.id) && r.id !== "MAX" && rangeStart(IDX.session_date, r.id) < first;
+    return `<button data-range="${r.id}" aria-pressed="${state.range === r.id}" ${unavailable ? `disabled title="Index history starts ${dstr(first)}"` : ""}>${r.label}</button>`;
+  }).join("");
+}
+
+/* ---------------- overview ---------------- */
+function renderOverview() {
+  const o = IDX.overview;
+  const stat = (k, v, sub, hl) => `<div class="stat${hl ? " hl" : ""}"><dt>${k}</dt><dd>${v}${sub ? `<small>${sub}</small>` : ""}</dd></div>`;
+  $("#stats").innerHTML = [
+    stat("Open", fmt(o.open)), stat("High", fmt(o.high)), stat("Low", fmt(o.low)),
+    stat("Prev. close", fmt(o.prev_close)),
+    stat("52-wk high", fmt(o.wk52_high), dstr(o.wk52_high_date)),
+    stat("52-wk low", fmt(o.wk52_low), dstr(o.wk52_low_date)),
+    stat("Total market cap", lakhCr(o.total_mcap_cr), `₹${nf0.format(o.total_mcap_cr)} Cr`, true),
+    stat("Free-float market cap", lakhCr(o.ffmc_cr), `₹${nf0.format(o.ffmc_cr)} Cr`),
+    stat("Constituents", o.constituents, `Reviewed ${dstr(o.last_review)}`),
+  ].join("");
+  const m = IDX.metrics_1y;
+  const tile = (key, k, v, cls) => `<div><span>${k}<button type="button" class="info" data-info="${key}" aria-expanded="false"
+      aria-controls="infoPop" aria-label="What is ${k.toLowerCase()}?">${INFO_ICON}</button></span><b class="${cls || ""}">${v}</b></div>`;
+  $("#risk").innerHTML = [
+    tile("ret", "Return", pct(m.total_return), m.total_return >= 0 ? "up" : "down"),
+    tile("vol", "Volatility", (m.volatility * 100).toFixed(1) + "%"),
+    tile("sharpe", "Sharpe ratio", ratio(m.sharpe)),
+    tile("sortino", "Sortino ratio", ratio(m.sortino)),
+    tile("mdd", "Max drawdown", pct(m.max_drawdown, 1), "down"),
+  ].join("");
+  closeInfo();
+  $("#riskNote").textContent = `From ${dstr(m.window_start)}. Volatility is annualised from daily returns; Sharpe and Sortino use a ${(m.risk_free * 100).toFixed(0)}% risk-free rate. Since the base of ${nf0.format(IDX.base_value)} on ${dstr(IDX.base_date)} the index is ${pct(IDX.since_base)}.`;
+  const max = Math.max(...IDX.sectors.map((s) => s.weight));
+  $("#sectors").innerHTML = IDX.sectors.map((s) => `<div class="sec"><span class="lab" title="${s.sector}">${s.sector} <small>· ${s.count}</small></span>
+    <span class="track"><i style="width:${(s.weight / max) * 100}%"></i></span><span class="val">${(s.weight * 100).toFixed(1)}%</span></div>`).join("");
+}
+
+/* ---------------- metric explainers ---------------- */
+const INFO_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.2"/></svg>';
+// What the metric is · how it is worked out · how to read it
+function infoText(key) {
+  const m = IDX.metrics_1y, rf = `${(m.risk_free * 100).toFixed(0)}%`;
+  return {
+    ret: ["Return", "How much the index rose or fell over the past 365 days.",
+      "Latest close ÷ the close a year earlier, minus 1. NATI is a price index, so dividends are not added back.",
+      "The headline number: what holding the whole basket for the year would have done to its price."],
+    vol: ["Volatility", "How widely the index swings from day to day.",
+      "Standard deviation of daily returns, scaled to a year (× √252 trading days).",
+      "Higher means bigger moves in both directions. It measures bumpiness, not direction."],
+    sharpe: ["Sharpe ratio", "Return earned for each unit of risk taken.",
+      `(Annualised return − ${rf} risk-free rate) ÷ volatility.`,
+      "Above 1 is generally seen as good. Below 0 means the index returned less than a risk-free deposit."],
+    sortino: ["Sortino ratio", "Like Sharpe, but only falls count as risk; upside swings are not penalised.",
+      `(Annualised return − ${rf}) ÷ downside deviation, the volatility of returns below the risk-free rate.`,
+      "Higher is better. A Sortino well above the Sharpe means most of the swings were upward."],
+    corr: ["Correlation", "How closely NATI's daily moves track another index's, from −1 to +1.",
+      "Pearson correlation of daily % changes within each quarter. NASDAQ-100 uses the previous US session, the last US move Indian markets have seen when they open.",
+      "Near +1: they rise and fall together. Near 0: little relation. Above 0.7 is close; below 0.2 the two barely move together."],
+    mdd: ["Max drawdown", "The deepest fall from a high to a later low during the year.",
+      "On daily closes: lowest point ÷ the highest close before it, minus 1.",
+      "The worst loss a holder could have sat through in the window. Smaller is easier to stomach."],
+  }[key];
+}
+let infoBtn = null;
+function closeInfo() {
+  for (const p of document.querySelectorAll(".infopop")) p.hidden = true;
+  if (infoBtn) infoBtn.setAttribute("aria-expanded", "false");
+  infoBtn = null;
+}
+function openInfo(btn) {
+  if (infoBtn === btn) { closeInfo(); return; }
+  closeInfo();
+  const [title, what, how, read] = infoText(btn.dataset.info);
+  // the card opens in the button's .infowrap, under its [data-anchor] (or the tile around it)
+  const wrap = btn.closest(".infowrap"), pop = wrap.querySelector(".infopop");
+  pop.innerHTML = `<b>${title}</b><p>${what}</p><p><em>How it's calculated:</em> ${how}</p><p><em>How to read it:</em> ${read}</p>`;
+  pop.hidden = false;
+  const tileEl = btn.closest("[data-anchor]") || btn.closest("div");
+  pop.style.top = tileEl.offsetTop + tileEl.offsetHeight + 6 + "px";
+  pop.style.left = Math.max(0, Math.min(tileEl.offsetLeft, wrap.clientWidth - pop.offsetWidth)) + "px";
+  btn.setAttribute("aria-expanded", "true");
+  infoBtn = btn;
+}
+
+/* ---------------- constituents ---------------- */
+const COLS = [
+  { key: "company", label: "Company", cls: "" },
+  { key: "weight", label: "Weight", cls: "" },
+  { key: "price", label: "Price (₹)", cls: "r hide-sm" },
+  { key: "change_pct", label: "Day", cls: "r" },
+  { key: "mcap_cr", label: "Market cap (₹ Cr)", cls: "r hide-sm" },
+];
+function renderConstituents() {
+  $("#consHead").innerHTML = COLS.map((c) => `<th class="${c.cls}" ${state.sortKey === c.key ? `aria-sort="${state.sortDir > 0 ? "ascending" : "descending"}"` : ""}>
+    <button data-sort="${c.key}">${c.label}${state.sortKey === c.key ? (state.sortDir > 0 ? " ↑" : " ↓") : ""}</button></th>`).join("");
+  const q = state.consFilter.toLowerCase();
+  const rows = CONS.filter((c) => !q || c.company.toLowerCase().includes(q) || c.sector.toLowerCase().includes(q) || c.ticker.toLowerCase().includes(q))
+    .sort((a, b) => { const x = a[state.sortKey], y = b[state.sortKey]; return (typeof x === "string" ? x.localeCompare(y) : x - y) * state.sortDir; });
+  const maxW = Math.max(...CONS.map((c) => c.weight));
+  const shown = q || state.consAll ? rows : rows.slice(0, CONS_PREVIEW);
+  $("#consBody").innerHTML = shown.map((c) => `<tr class="${c.weight_at_review >= 0.1499 ? "cap" : ""}">
+    <td><div class="co">${PROFILES.has(c.id) ? `<a href="${profileHref(c.id)}">${c.company}</a>` : c.company}<small>${c.sector} · ${c.ticker}</small></div></td>
+    <td><div class="w"><i style="width:${(c.weight / maxW) * 100}%"></i><b>${(c.weight * 100).toFixed(2)}%</b></div></td>
+    <td class="r hide-sm">${fmt(c.price)}</td>
+    <td class="r ${c.change_pct >= 0 ? "up" : "down"}">${pct(c.change_pct)}</td>
+    <td class="r hide-sm">${nf0.format(c.mcap_cr)}</td></tr>`).join("");
+  const map = state.consView === "map";
+  $("#consCount").textContent = q
+    ? `${rows.length} of ${CONS.length} match${map ? "" : " · weights drift with prices between reviews"}`
+    : `${CONS.length} constituents${map ? "" : " · weights drift with prices between reviews"}`;
+  const more = $("#consMore");
+  more.hidden = map || !!q || rows.length <= CONS_PREVIEW;
+  more.textContent = state.consAll ? `Show top ${CONS_PREVIEW}` : `Show all ${rows.length} constituents`;
+  more.setAttribute("aria-expanded", state.consAll);
+  for (const b of document.querySelectorAll("#consView [data-view]")) b.setAttribute("aria-pressed", b.dataset.view === state.consView);
+  $("#heatView").hidden = !map;
+  $("#tableView").hidden = map;
+  if (map) renderHeatmap();
+  saveState();
+}
+const CONS_PREVIEW = 15;
+
+/* ---------------- heatmap ---------------- */
+// Squarified treemap (Bruls, Huizing, van Wijk): fill the box row by row, adding items to a
+// row while that keeps its rectangles closer to square. items: [{v}] sorted largest first.
+function squarify(items, x, y, w, h) {
+  const total = items.reduce((s, it) => s + it.v, 0);
+  const out = [];
+  if (!total || w <= 0 || h <= 0) return out;
+  let rest = items.map((it) => ({ it, a: (it.v / total) * w * h }));
+  const worst = (row, side) => {
+    let s = 0, mx = 0, mn = Infinity;
+    for (const r of row) { s += r.a; mx = Math.max(mx, r.a); mn = Math.min(mn, r.a); }
+    return Math.max((side * side * mx) / (s * s), (s * s) / (side * side * mn));
+  };
+  while (rest.length) {
+    const side = Math.min(w, h);
+    let n = 1, best = worst(rest.slice(0, 1), side);
+    while (n < rest.length) { const next = worst(rest.slice(0, n + 1), side); if (next > best) break; best = next; n++; }
+    const row = rest.slice(0, n), sum = row.reduce((s, r) => s + r.a, 0);
+    rest = rest.slice(n);
+    if (w >= h) {
+      const cw = sum / h; let yy = y;
+      for (const r of row) { const rh = r.a / cw; out.push({ it: r.it, x, y: yy, w: cw, h: rh }); yy += rh; }
+      x += cw; w -= cw;
+    } else {
+      const rh = sum / w; let xx = x;
+      for (const r of row) { const rw = r.a / rh; out.push({ it: r.it, x: xx, y, w: rw, h: rh }); xx += rw; }
+      y += rh; h -= rh;
+    }
+  }
+  return out;
+}
+// Colour steps for each return period: flat, then three steps up or down, then beyond. Longer periods
+// move more, so their steps are wider (a 3% day is as notable as a 15% month)
+const HEAT_PERIODS = {
+  "1D": { steps: [0.001, 0.01, 0.02, 0.03], word: () => sessionWord(), long: "today" },
+  "1W": { steps: [0.0025, 0.025, 0.05, 0.075], word: () => "over the past week", long: "past week" },
+  "1M": { steps: [0.005, 0.05, 0.10, 0.15], word: () => "over the past month", long: "past month" },
+  "YTD": { steps: [0.01, 0.10, 0.20, 0.30], word: () => "this year", long: "year to date" },
+  "1Y": { steps: [0.01, 0.10, 0.25, 0.40], word: () => "over the past year", long: "past year" },
+};
+function heatLevel(r, steps) {
+  if (r == null) return "n";
+  const a = Math.abs(r); let k = 0;
+  while (k < steps.length && a >= steps[k]) k++;
+  return k === 0 ? "n" : (r > 0 ? "u" : "d") + k;
+}
+const pctK = (v) => (v * 100 >= 10 || v * 100 <= -10 ? Math.round(v * 100) : +(v * 100).toFixed(1)) + "%";
+// A company's return over the chosen period (1D from the index build, longer ones from the profiles)
+function heatRet(c) {
+  const P = state.heatPeriod;
+  if (P === "1D") return c.change_pct;
+  const r = RETURNS[c.id];
+  return r && r[P] != null ? r[P] : null;
+}
+const heatSince = (c) => (state.heatPeriod !== "1D" && RETURNS[c.id] && RETURNS[c.id].since && RETURNS[c.id].since[state.heatPeriod]) || null;
+// Group by return: five bands from the period's own steps, best first
+function returnBands(steps) {
+  const s1 = steps[1], s3 = steps[3];
+  return [
+    { name: `Up ${pctK(s3)} or more`, test: (r) => r >= s3 },
+    { name: `Up ${pctK(s1)} to ${pctK(s3)}`, test: (r) => r >= s1 && r < s3 },
+    { name: `Within ±${pctK(s1)}`, test: (r) => r > -s1 && r < s1 },
+    { name: `Down ${pctK(s1)} to ${pctK(s3)}`, test: (r) => r <= -s1 && r > -s3 },
+    { name: `Down ${pctK(s3)} or more`, test: (r) => r <= -s3 },
+  ];
+}
+// Each company's share of today's index move, in index points. Weights in constituents.json
+// already include today's price, so take them back to the previous close first.
+function contributions() {
+  const prevW = CONS.map((c) => c.weight / (1 + c.change_pct));
+  const sum = prevW.reduce((a, b) => a + b, 0);
+  return new Map(CONS.map((c, i) => [c.id, (prevW[i] / sum) * c.change_pct * IDX.prev_close]));
+}
+const sessionWord = () => {
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  return IDX.session_date === today ? "today" : `on ${dstr(IDX.session_date)}`;
+};
+let heatW = 0, heatContrib = new Map();
+function renderHeatmap() {
+  const box = $("#heatmap");
+  const W = box.clientWidth;
+  hideHeatTip();
+  for (const b of document.querySelectorAll("#heatPeriod [data-hp]")) b.setAttribute("aria-pressed", b.dataset.hp === state.heatPeriod);
+  for (const b of document.querySelectorAll("#heatGroup [data-hg]")) b.setAttribute("aria-pressed", b.dataset.hg === state.heatGroup);
+  if (!W) return;                       // tab not shown yet: the resize observer draws it later
+  heatW = W;
+  const H = W <= 480 ? Math.round(W * 1.15) : Math.round(Math.min(440, Math.max(340, W * 0.6)));
+  box.style.height = H + "px";
+  heatContrib = contributions();
+  const HP = HEAT_PERIODS[state.heatPeriod], steps = HP.steps;
+  const q = state.consFilter.toLowerCase();
+  const match = (c) => !q || c.company.toLowerCase().includes(q) || c.sector.toLowerCase().includes(q) || c.ticker.toLowerCase().includes(q);
+  // Groups: sectors by weight, or return bands best first (an empty band is left out)
+  let groups;
+  if (state.heatGroup === "return") {
+    const bands = returnBands(steps).map((b) => ({ ...b, list: [] }));
+    const none = { name: "No data for this period", list: [] };
+    for (const c of CONS) { const r = heatRet(c); (r == null ? none : bands.find((b) => b.test(r))).list.push(c); }
+    groups = [...bands, none].filter((g) => g.list.length);
+  } else {
+    const m = new Map();
+    for (const c of CONS) { if (!m.has(c.sector)) m.set(c.sector, []); m.get(c.sector).push(c); }
+    groups = [...m].map(([name, list]) => ({ name, list }));
+  }
+  groups = groups.map((g) => ({ ...g, list: g.list.sort((a, b) => b.weight - a.weight), v: g.list.reduce((s, c) => s + c.weight, 0) }));
+  if (state.heatGroup !== "return") groups.sort((a, b) => b.v - a.v);
+  // 3px between groups, 1px between companies: lay groups out on a box 3px larger and trim
+  // each one, so the outer edges still land flush with the widget column
+  const html = [];
+  for (const sr of squarify(groups, 0, 0, W + 3, H + 3)) {
+    const x0 = Math.round(sr.x), y0 = Math.round(sr.y), x1 = Math.round(sr.x + sr.w) - 2, y1 = Math.round(sr.y + sr.h) - 2;
+    // return bands are few and their name is the point, so they get a header in less room than a sector
+    const head = state.heatGroup === "return" ? x1 - x0 >= 56 && y1 - y0 >= 40 : x1 - x0 >= 72 && y1 - y0 >= 64;
+    if (head) html.push(`<div class="hsec" style="left:${x0}px;top:${y0}px;width:${x1 - x0}px" aria-hidden="true" title="${sr.it.name}">${sr.it.name}</div>`);
+    const top = head ? y0 + 18 : y0;
+    const tiles = squarify(sr.it.list.map((c) => ({ c, v: c.weight })), x0, top, x1 - x0, y1 - top);
+    for (const t of tiles) {
+      const c = t.it.c, r = heatRet(c);
+      const l = Math.round(t.x), tp = Math.round(t.y), w = Math.round(t.x + t.w) - l - 1, h = Math.round(t.y + t.h) - tp - 1;
+      if (w < 1 || h < 1) continue;
+      const big = w >= 110 && h >= 64;
+      // rough text widths at the tile's font size; tickers are all capitals, so wider per letter
+      const fits = (s, caps) => h >= 18 && s.length * (big ? 8.4 : 7) * (caps ? 1.18 : 1) <= w - 12;
+      const label = fits(c.company) ? c.company : fits(c.ticker, true) ? c.ticker : "";
+      const rt = r == null ? "—" : pct(r);
+      const dir = r == null ? "no data" : r > 0 ? "up" : r < 0 ? "down" : "flat";
+      html.push(`<button type="button" class="ht h-${heatLevel(r, steps)}${big ? " big" : ""}${match(c) ? "" : " dim"}" tabindex="-1" data-id="${c.id}"
+        style="left:${l}px;top:${tp}px;width:${w}px;height:${h}px"
+        aria-label="${c.company}, ${c.sector}. ${(c.weight * 100).toFixed(2)}% of the index, ${dir}${r == null ? "" : ` ${(Math.abs(r) * 100).toFixed(2)}%`} ${HP.word()}${PROFILES.has(c.id) ? ". Opens the company profile" : ""}">${label
+          ? `<b>${label}</b>${h >= (big ? 50 : 40) && rt.length * (big ? 7.6 : 6.8) <= w - 10 ? `<span>${rt}</span>` : ""}` : ""}</button>`);
+    }
+  }
+  box.innerHTML = html.join("");
+  const first = box.querySelector(".ht"); if (first) first.tabIndex = 0;
+
+  const rets = CONS.map(heatRet).filter((r) => r != null);
+  const up = rets.filter((r) => r > 0).length, down = rets.filter((r) => r < 0).length;
+  const flat = rets.length - up - down;
+  $("#heatBreadth").innerHTML = `<span class="up">${up} up</span> · <span class="down">${down} down</span>${flat ? ` · ${flat} unchanged` : ""} ${HP.word()}`;
+  const ticks = [`−${pctK(steps[3])}`, "", `−${pctK(steps[1])}`, "", "0", "", `+${pctK(steps[1])}`, "", `+${pctK(steps[3])}`];
+  $("#heatScale").innerHTML = ["d4", "d3", "d2", "d1", "n", "u1", "u2", "u3", "u4"].map((k) => `<i class="h-${k}"></i>`).join("") +
+    ticks.map((t) => `<span>${t}</span>`).join("");
+  // Today: the companies that moved the index most, in points. Longer periods: the best and worst returns
+  if (state.heatPeriod === "1D") {
+    const ranked = CONS.map((c) => ({ c, pts: heatContrib.get(c.id) })).sort((a, b) => b.pts - a.pts);
+    const li = (x) => `<li><span>${x.c.company}</span><b class="${x.pts >= 0 ? "up" : "down"}">${signed(x.pts)}</b></li>`;
+    const lift = ranked.filter((x) => x.pts > 0).slice(0, 3), drag = ranked.filter((x) => x.pts < 0).reverse().slice(0, 3);
+    $("#heatMovers").innerHTML = (lift.length ? `<div><h4>Lifted the index most</h4><ol>${lift.map(li).join("")}</ol></div>` : "") +
+      (drag.length ? `<div><h4>Weighed on it most</h4><ol>${drag.map(li).join("")}</ol></div>` : "");
+  } else {
+    const ranked = CONS.map((c) => ({ c, r: heatRet(c) })).filter((x) => x.r != null).sort((a, b) => b.r - a.r);
+    const li = (x) => `<li><span>${x.c.company}${heatSince(x.c) ? ` <small>since listing</small>` : ""}</span><b class="${x.r >= 0 ? "up" : "down"}">${pct(x.r)}</b></li>`;
+    const best = ranked.filter((x) => x.r > 0).slice(0, 3), worst = ranked.filter((x) => x.r < 0).reverse().slice(0, 3);
+    $("#heatMovers").innerHTML = (best.length ? `<div><h4>Best, ${HP.long}</h4><ol>${best.map(li).join("")}</ol></div>` : "") +
+      (worst.length ? `<div><h4>Worst, ${HP.long}</h4><ol>${worst.map(li).join("")}</ol></div>` : "");
+  }
+  const asOf = new Date(IDX.as_of).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit" });
+  const grouped = state.heatGroup === "return" ? "grouped by return" : "grouped by sector";
+  const partial = CONS.filter(heatSince).length;
+  $("#heatNote").textContent = `Tiles are ${grouped} and sized by weight in the index; colour shows each company's change ${HP.word()}, as of ${asOf} IST.` +
+    (state.heatPeriod === "1D" ? ` Points are each company's share of the index's ${signed(IDX.change)}-point move.` : "") +
+    (partial ? ` ${partial} ${partial === 1 ? "company listed" : "companies listed"} during the period ${partial === 1 ? "shows its" : "show their"} return since listing.` : "");
+}
+let heatTipId = null;
+function hideHeatTip() {
+  const tip = $("#heatTip"); if (tip) tip.hidden = true;
+  const on = document.querySelector(".ht.on"); if (on) on.classList.remove("on");
+  heatTipId = null;
+}
+// Show the company card above the pointer (or the tile, from the keyboard), below it near the top
+function showHeatTip(tile, px, py, touch) {
+  const c = CONS.find((x) => x.id === tile.dataset.id);
+  if (!c) return;
+  const tip = $("#heatTip");
+  const pts = heatContrib.get(c.id) || 0;
+  const cls = (v) => (v > 0 ? "up" : v < 0 ? "down" : "");
+  const HP = HEAT_PERIODS[state.heatPeriod], r = heatRet(c), since = heatSince(c);
+  tip.innerHTML = `<div class="hn">${c.company}</div><div class="t">${c.sector} · ${c.ticker}</div>
+    <div class="row"><span>Change ${since ? `since listing (${shortDate(since)})` : HP.word()}</span><b class="${cls(r)}">${r == null ? "—" : pct(r)}</b></div>
+    <div class="row"><span>Price</span><b>₹${fmt(c.price)}</b></div>
+    <div class="row"><span>Weight in index</span><b>${(c.weight * 100).toFixed(2)}%</b></div>
+    ${state.heatPeriod === "1D" ? `<div class="row"><span>Index points</span><b class="${cls(pts)}">${signed(pts)}</b></div>` : `<div class="row"><span>Change today</span><b class="${cls(c.change_pct)}">${pct(c.change_pct)}</b></div>`}` +
+    (!PROFILES.has(c.id) ? "" : touch ? `<a class="go" href="${profileHref(c.id)}">View company profile →</a>` : `<div class="go">Click for the company profile</div>`);
+  tip.classList.toggle("pinned", !!touch);
+  const prev = document.querySelector(".ht.on"); if (prev) prev.classList.remove("on");
+  tile.classList.add("on");
+  heatTipId = c.id;
+  tip.hidden = false;
+  const ax = px ?? tile.offsetLeft + tile.offsetWidth / 2;
+  const ay = py ?? tile.offsetTop;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  const above = ay - th - 12 >= 0;
+  tip.style.top = (above ? ay - th - 12 : (py == null ? tile.offsetTop + tile.offsetHeight + 8 : ay + 18)) + "px";
+  tip.style.left = Math.min(Math.max(ax - tw / 2, 0), heatW - tw) + "px";
+}
+
+/* ---------------- methodology ---------------- */
+function renderMethod() {
+  const last = REVIEWS[REVIEWS.length - 1];
+  const ex = last.excluded;
+  $("#method").innerHTML = `
+    <p>NATI tracks Indian new-age tech companies listed on the NSE or BSE mainboard. It is a <b>capped free-float market cap</b> index: bigger companies weigh more, but only the shares available for public trading count.</p>
+    <ul>
+      <li><b>Eligibility.</b> Mainboard listing in India, market cap of at least ₹1,000 Cr and average daily traded value of at least ₹5 Cr over the past three months. Companies listed abroad are excluded.</li>
+      <li><b>Seasoning.</b> A new listing joins after 90 days of trading. A mega IPO, whose free-float market cap would rank in the top 10% of eligible companies, can join after 30 days.</li>
+      <li><b>Cap.</b> No company above 15% at a review. Any excess is shared out among the others in proportion to their size, so the order by size never changes.</li>
+      <li><b>Reviews.</b> Constituents and weights are reset on the last trading day of each quarter and apply from the next session. Between reviews, weights drift with prices.</li>
+      <li><b>Base.</b> ${nf0.format(IDX.base_value)} on ${dstr(IDX.base_date)}. Levels are chain-linked, so a published value never changes. It is a price index; dividends are not reinvested.</li>
+    </ul>
+    <p>Last review ${dstr(last.cutoff)}: ${last.constituents} constituents, effective ${dstr(last.effective)}. Next review ${dstr(IDX.overview.next_review)}.</p>
+    <details><summary>Candidates not in the index at the last review (${ex.length})</summary>
+      <ul>${ex.map((x) => `<li>${x.company}: ${x.reason}</li>`).join("")}</ul></details>
+    <details><summary>Data notes</summary><ul>
+      <li>The page updates about every ${IDX.refresh_minutes || 20} minutes on trading days, from the 9:15 AM IST open until shortly after the 3:30 PM close. Each update recalculates the index from 5-minute bars, so intraday levels arrive in batches, not live.</li>
+      <li>Prices are NSE end-of-day and 5-minute bars via Yahoo Finance, delayed. Share counts and free-float factors come from each company's latest filed shareholding pattern.</li>
+      <li>History before the latest filing uses the current share count and free-float factor for each company.</li>
+      <li>Share counts are adjusted for splits, bonuses and consolidations after the filing date, because past prices are restated for them.</li>
+      <li>Daily high and low come from the index path sampled every 5 minutes (hourly before ${dstr(IDX.sessions.length ? firstFiveMinDate() : IDX.session_date)}). On ${IDX.hl_source.estimated || 0} sessions without intraday bars they are estimated.</li>
+      <li>Intraday candles are built from the index's own 5-minute path.</li>
+      <li>Compare: NIFTY 50, BSE SENSEX and NIFTY Next 50 on every range. S&amp;P 500, NASDAQ-100 and NASDAQ Composite trade outside Indian hours, so they are daily only (1M and longer), using each date's latest US close. Any of the index's constituents can be compared too, on every range. Up to four comparisons at a time. Lines show the change since the start of the period.</li>
+      <li>Zoom with the + and − buttons, Ctrl/⌘ + scroll, a pinch, or by dragging the date axis. Drag the chart to pan; double-click the axis or press Reset to see the whole range.</li>
+    </ul></details>`;
+}
+function firstFiveMinDate() { const rows = IDX.daily; return rows[Math.max(0, rows.length - (IDX.hl_source["5m"] || 0))][0]; }
+
+/* ---------------- key insights (data/insights.json, built by v2/build_insights.py) ---------------- */
+let INS = null;
+const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function span(a, b) {
+  const [y1, m1, d1] = a.split("-").map(Number), [y2, m2, d2] = b.split("-").map(Number);
+  if (y1 === y2 && m1 === m2) return `${d1}–${d2} ${MONTHS[m2 - 1]} ${y2}`;
+  return y1 === y2 ? `${d1} ${MONTHS[m1 - 1]} – ${d2} ${MONTHS[m2 - 1]} ${y2}` : `${dstr(a)} – ${dstr(b)}`;
+}
+const ptsTxt = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(2);
+// One row of a two-sided bar chart; widths are a share of the largest absolute value
+function dvRow(label, v, max, text, me, oneSided) {
+  const w = max ? (Math.abs(v) / max) * (oneSided ? 100 : 50) : 0;
+  return `<div class="dv${me ? " me" : ""}"><span class="lab" title="${label}">${label}</span>
+    <span class="trk" aria-hidden="true"><i class="${v >= 0 ? "pos" : "neg"}" style="width:${w}%"></i></span>
+    <span class="val ${v > 0 ? "up" : v < 0 ? "down" : ""}">${text}</span></div>`;
+}
+function renderInsights() {
+  if (!INS) return;
+  // insights.json carries the past 5, 10 and 20 sessions; older builds only the 5-session "week"
+  const W = (INS.windows && INS.windows[state.insWin]) || INS.week;
+  const n = W.sessions.length, spanTxt = W.span || "the past week";
+  for (const b of document.querySelectorAll("#insWin [data-win]")) {
+    b.setAttribute("aria-pressed", b.dataset.win === String(n));
+    b.hidden = !!INS.windows && !INS.windows[b.dataset.win];
+  }
+  $("#insWin").hidden = !INS.windows;
+  $("#insLabel").textContent = W.label || "Past week";
+  $("#insRange").textContent = `${span(W.sessions[0].date, W.end)} · ${n} sessions`;
+  $("#insBenchSub").textContent = `Change over the same ${n} sessions`;
+  $("#insSectorsSub").textContent = `Index points by sector over ${spanTxt}`;
+  $("#insBig").innerHTML = `<b class="${W.change_pct >= 0 ? "up" : "down"}">${pct(W.change_pct)}</b>
+    <span>${ptsTxt(W.change_pts)} pts · ${fmt(W.start_level)} → ${fmt(W.end_level)}</span>`;
+  $("#insLines").innerHTML = (W.headlines || INS.headlines).map((l) => `<li>${l}</li>`).join("");
+
+  const rows = [{ name: "NATI", change_pct: W.change_pct, me: true }, ...W.benchmarks];
+  // when every value has the same sign the zero line moves to the edge and bars get the full width
+  const one = (vals) => vals.every((v) => v >= 0) || vals.every((v) => v <= 0);
+  const bmax = Math.max(...rows.map((r) => Math.abs(r.change_pct)));
+  const bOne = one(rows.map((r) => r.change_pct));
+  $("#insBench").classList.toggle("one", bOne);
+  $("#insBench").innerHTML = rows.map((r) => dvRow(r.name, r.change_pct, bmax, pct(r.change_pct), r.me, bOne)).join("");
+
+  // Day columns share one scale so the zero line sits at the same height in each
+  const hi = Math.max(0, ...W.sessions.map((d) => d.change_pct)), lo = Math.min(0, ...W.sessions.map((d) => d.change_pct));
+  // bars use the column minus 18px at each end, which keeps room for the value labels
+  const range = hi - lo || 1, zf = hi / range, at = (f) => `calc(18px + (100% - 36px) * ${f.toFixed(4)})`;
+  // Longer windows: every session keeps its bar, but only the best and worst carry a value label
+  // and the dates thin out, so 20 columns still fit a phone
+  const many = n > 5;
+  const best = W.sessions.reduce((a, d) => (d.change_pct > a.change_pct ? d : a)), worst = W.sessions.reduce((a, d) => (d.change_pct < a.change_pct ? d : a));
+  const every = n > 10 ? 5 : 2;
+  $("#insDays").classList.toggle("many", many);
+  $("#insDays").style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+  $("#insDays").innerHTML = W.sessions.map((d, i) => {
+    const hf = Math.abs(d.change_pct) / range, up = d.change_pct >= 0;
+    const tf = up ? zf - hf : zf;
+    const lab = up ? `top:calc(${at(tf)} - 17px)` : `top:calc(${at(tf + hf)} + 3px)`;
+    const dt = new Date(d.date + "T00:00:00Z");
+    const showVal = !many || d === best || d === worst;
+    const showDate = !many || i === n - 1 || (n - 1 - i) % every === 0;
+    return `<div class="day" title="${dstr(d.date)}: ${pct(d.change_pct)}"><div class="col" style="--zero:${at(zf)}"><i class="${up ? "pos" : "neg"}" style="top:${at(tf)};height:calc((100% - 36px) * ${hf.toFixed(4)})"></i>
+      ${showVal ? `<span style="${lab}">${pct(d.change_pct)}</span>` : ""}</div><small>${showDate ? `${many ? "" : `<b>${WEEKDAY[dt.getUTCDay()]}</b>`}${dt.getUTCDate()} ${MONTHS[dt.getUTCMonth()]}` : ""}</small></div>`;
+  }).join("");
+  $("#insDays").setAttribute("aria-label", W.sessions.map((d) => `${dstr(d.date)} ${pct(d.change_pct)}`).join("; "));
+
+  const mmax = Math.max(...[...W.lifted, ...W.dragged].map((r) => Math.abs(r.points)), 0.01);
+  const mv = (r) => `<li><span class="co">${PROFILES.has(r.id) ? `<a href="${profileHref(r.id)}">${r.company}</a>` : r.company}
+      <small>${r.sector} · ${pct(r.change_pct)}${r.since ? `, since joining ${shortDate(r.since)}` : ""}</small></span><b class="${r.points >= 0 ? "up" : "down"}">${ptsTxt(r.points)} pts</b>
+      <span class="bar" aria-hidden="true"><i class="${r.points >= 0 ? "up" : "down"}" style="width:${(Math.abs(r.points) / mmax) * 100}%"></i></span></li>`;
+  $("#insMovers").innerHTML = `<div><h5>Lifted the index</h5>${W.lifted.length ? `<ol>${W.lifted.map(mv).join("")}</ol>` : `<p class="note">No company added points over ${spanTxt}.</p>`}</div>
+    <div><h5>Pulled it down</h5>${W.dragged.length ? `<ol>${W.dragged.map(mv).join("")}</ol>` : `<p class="note">No company took points off over ${spanTxt}.</p>`}</div>`;
+  const list = (a) => a.map((r) => `${r.company} ${pct(r.change_pct)}`).join(", ");
+  $("#insPct").textContent = [W.gainers.length ? `Biggest gainers: ${list(W.gainers)}.` : "", W.losers.length ? `Biggest fallers: ${list(W.losers)}.` : ""].join(" ");
+
+  const smax = Math.max(...W.sectors.map((x) => Math.abs(x.points)), 0.01);
+  const sOne = one(W.sectors.map((x) => x.points));
+  $("#insSectors").classList.toggle("one", sOne);
+  $("#insSectors").innerHTML = [...W.sectors].sort((a, b) => (sOne ? Math.abs(b.points) - Math.abs(a.points) : b.points - a.points))
+    .map((x) => dvRow(`${x.sector} · ${x.count}`, x.points, smax, ptsTxt(x.points), false, sOne)).join("");
+
+  const C = INS.correlation, py = C.past_year;
+  $("#insCorrSub").textContent = `Daily moves, by calendar quarter. Over the past year: NIFTY 50 ${py.nifty50.toFixed(2)}, NASDAQ-100 ${py.nasdaq100.toFixed(2)}.`;
+  $("#insCorrTable").innerHTML = `<thead><tr><th>Quarter</th><th class="r">Sessions</th><th class="r">NIFTY 50</th><th class="r">NASDAQ-100</th></tr></thead><tbody>` +
+    C.quarters.map((q) => `<tr><td>${q.quarter}${q.partial ? " (so far)" : ""}</td><td class="r">${q.sessions}</td><td class="r">${q.nifty50.toFixed(2)}</td><td class="r">${q.nasdaq100.toFixed(2)}</td></tr>`).join("") + "</tbody>";
+  $("#insCorrNote").textContent = C.method + ` Built ${new Date(INS.generated_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })} IST.`;
+  drawCorr();
+}
+// Two lines (NIFTY 50, NASDAQ-100) over quarters, with a hover/tap readout per quarter
+function drawCorr() {
+  if (!INS) return;
+  const svg = $("#insCorr"), Wd = svg.clientWidth;
+  if (!Wd) return;                                   // tab not showing yet
+  const Q = INS.correlation.quarters, C = themeColors();
+  const keys = [["nifty50", "NIFTY 50", C.s[0]], ["nasdaq100", "NASDAQ-100", C.s[1]]];
+  const H = 220, L = 34, R = Wd < 420 ? 12 : 92, T = 12, B = 30;
+  const lo = Math.min(0, ...Q.flatMap((q) => [q.nifty50, q.nasdaq100]));
+  const y0 = Math.floor(lo * 4) / 4, y1 = 1;
+  const x = (i) => L + (Q.length === 1 ? 0 : (i / (Q.length - 1)) * (Wd - L - R));
+  const y = (v) => T + (1 - (v - y0) / (y1 - y0)) * (H - T - B);
+  const ticks = []; for (let v = y0; v <= y1 + 1e-9; v += 0.25) ticks.push(v);
+  let g = ticks.map((v) => `<line x1="${L}" x2="${Wd - R + 6}" y1="${y(v)}" y2="${y(v)}" stroke="${v === 0 ? C.muted : C.hair}" stroke-width="1"/>
+    <text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v.toFixed(2).replace(/^-/, "−")}</text>`).join("");
+  const every = Wd < 420 ? 2 : 1;                    // thin the quarter labels on phones
+  g += Q.map((q, i) => (i % every === (Q.length - 1) % every ? `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${q.quarter.replace(" 20", " ’")}</text>` : "")).join("");
+  g += `<line id="corrHair" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="${C.muted}" stroke-width="1" visibility="hidden"/>`;
+  for (const [k, name, col] of keys) {
+    const pts = Q.map((q, i) => [x(i), y(q[k])]);
+    const done = Q.filter((q) => !q.partial).length;
+    const solid = pts.slice(0, Math.max(done, 1)), tail = pts.slice(Math.max(done - 1, 0));
+    g += `<polyline points="${solid.map((p) => p.join(",")).join(" ")}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>`;
+    if (tail.length > 1 && done < Q.length) g += `<polyline points="${tail.map((p) => p.join(",")).join(" ")}" fill="none" stroke="${col}" stroke-width="2" stroke-dasharray="4 4"/>`;
+    g += pts.map(([px, py], i) => `<circle cx="${px}" cy="${py}" r="4" fill="${Q[i].partial ? C.surface : col}" stroke="${Q[i].partial ? col : C.surface}" stroke-width="2"/>`).join("");
+    if (R > 40) { const [lx, ly] = pts[pts.length - 1]; g += `<text class="dl" x="${lx + 10}" y="${ly + 4}">${name}</text>`; }
+  }
+  svg.setAttribute("viewBox", `0 0 ${Wd} ${H}`);
+  svg.innerHTML = g;
+  svg.setAttribute("aria-label", `Correlation of NATI's daily moves by quarter. ` + Q.map((q) => `${q.quarter}: NIFTY 50 ${q.nifty50.toFixed(2)}, NASDAQ-100 ${q.nasdaq100.toFixed(2)}`).join("; "));
+  const last = Q[Q.length - 1];
+  $("#insCorrLegend").innerHTML = keys.map(([k, name, col]) => `<span><i style="border-color:${col}"></i>${name} <b>${last[k].toFixed(2)}</b></span>`).join("") +
+    `<span>${last.quarter}${last.partial ? ", so far" : ""}</span>`;
+  const tip = $("#insCorrTip"), hair = svg.querySelector("#corrHair");
+  const show = (e) => {
+    const r = svg.getBoundingClientRect(), px = e.clientX - r.left;
+    let i = Math.round(((px - L) / (Wd - L - R)) * (Q.length - 1));
+    i = Math.max(0, Math.min(Q.length - 1, i));
+    const q = Q[i];
+    hair.setAttribute("x1", x(i)); hair.setAttribute("x2", x(i)); hair.setAttribute("visibility", "visible");
+    tip.innerHTML = `<div class="t">${q.quarter} (${q.months})${q.partial ? " · so far" : ""} · ${q.sessions} sessions</div>` +
+      keys.map(([k, name, col]) => `<div class="row"><span><i style="background:${col}"></i>${name}</span><b>${q[k].toFixed(2)}</b></div>`).join("");
+    tip.hidden = false;
+    const half = tip.offsetWidth / 2;
+    tip.style.left = Math.min(Math.max(x(i), half), Wd - half) + "px";
+    tip.style.top = "-8px";
+    tip.style.transform = "translate(-50%, -100%)";
+  };
+  svg.onpointermove = show; svg.onpointerdown = show;
+  svg.onpointerleave = (e) => { if (e.pointerType === "mouse") { tip.hidden = true; hair.setAttribute("visibility", "hidden"); } };
+}
+
+function renderFooter() {
+  $("#foot").innerHTML = `<span>${IDX.name} · base ${nf0.format(IDX.base_value)} on ${dstr(IDX.base_date)} · computed ${new Date(IDX.generated_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })} IST</span>
+    <span>Prices delayed, via Yahoo Finance. For information only, not investment advice. Inc42 does not rate or recommend securities.</span>
+    <span>Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>.</span>`;
+}
+
+/* ---------------- events ---------------- */
+function wire() {
+  $("#typeBtn").addEventListener("click", (e) => openPop(e.currentTarget, $("#typeMenu"), $("#typeMenu").hidden));
+  $("#cmpBtn").addEventListener("click", (e) => openPop(e.currentTarget, $("#cmpPop"), $("#cmpPop").hidden));
+  $("#indBtn").addEventListener("click", (e) => openPop(e.currentTarget, $("#indMenu"), $("#indMenu").hidden));
+  $("#cmpClose").addEventListener("click", () => { openPop(null, null, false); $("#cmpBtn").focus(); });
+  $("#typeMenu").addEventListener("click", (e) => { const b = e.target.closest("[data-type]"); if (!b) return;
+    state.type = b.dataset.type; renderTypeMenu(); openPop(null, null, false); renderChart(); });
+  $("#indMenu").addEventListener("click", (e) => { const b = e.target.closest("[data-ind]"); if (!b) return;
+    state.ind[b.dataset.ind] = !state.ind[b.dataset.ind]; renderIndMenu(); renderChart(); });
+  $("#cmpList").addEventListener("click", (e) => { const b = e.target.closest("[data-id]"); if (b && !b.disabled) toggleCompare(b.dataset.id); });
+  $("#cmpSearch").addEventListener("input", renderCompareList);
+  $("#chips").addEventListener("click", (e) => { const b = e.target.closest("[data-rm]"); if (b) toggleCompare(b.dataset.rm); });
+  $("#ranges").addEventListener("click", (e) => { const b = e.target.closest("[data-range]"); if (!b || b.disabled) return;
+    state.range = b.dataset.range; renderRanges(); renderChart(); });
+  // clicks inside a menu re-render its rows, so judge "outside" by the menus, not the target
+  for (const p of document.querySelectorAll(".tb")) p.addEventListener("click", (e) => e.stopPropagation());
+  document.addEventListener("click", () => openPop(null, null, false));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") openPop(null, null, false); });
+  for (const t of document.querySelectorAll('[role="tab"]')) t.addEventListener("click", () => {
+    for (const x of document.querySelectorAll('[role="tab"]')) {
+      const on = x === t; x.setAttribute("aria-selected", on); document.getElementById(x.getAttribute("aria-controls")).hidden = !on;
+    }
+    // The heatmap is laid out from its width, which it only has once its tab is showing
+    if (t.id === "tab-constituents" && state.consView === "map" && $("#heatmap").clientWidth !== heatW) renderHeatmap();
+    if (t.id === "tab-insights") drawCorr();
+    saveState();
+  });
+  $("#consHead").addEventListener("click", (e) => { const b = e.target.closest("[data-sort]"); if (!b) return;
+    const k = b.dataset.sort; if (state.sortKey === k) state.sortDir *= -1; else { state.sortKey = k; state.sortDir = k === "company" ? 1 : -1; }
+    renderConstituents(); });
+  $("#consSearch").addEventListener("input", (e) => { state.consFilter = e.target.value; renderConstituents(); });
+  $("#consMore").addEventListener("click", () => {
+    const collapsing = state.consAll;
+    state.consAll = !state.consAll;
+    renderConstituents();
+    if (collapsing) $("#p-constituents").scrollIntoView({ block: "nearest" });
+  });
+  for (const box of document.querySelectorAll(".infowrap"))
+    box.addEventListener("click", (e) => { const b = e.target.closest(".info"); if (b) { e.stopPropagation(); openInfo(b); } });
+  document.addEventListener("click", (e) => { if (infoBtn && !e.target.closest("#infoPop")) closeInfo(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && infoBtn) { const b = infoBtn; closeInfo(); b.focus(); } });
+  $("#heatPeriod").addEventListener("click", (e) => { const b = e.target.closest("[data-hp]"); if (!b) return;
+    state.heatPeriod = b.dataset.hp; renderHeatmap(); saveState(); });
+  $("#heatGroup").addEventListener("click", (e) => { const b = e.target.closest("[data-hg]"); if (!b) return;
+    state.heatGroup = b.dataset.hg; renderHeatmap(); saveState(); });
+  $("#insWin").addEventListener("click", (e) => { const b = e.target.closest("[data-win]"); if (!b) return;
+    state.insWin = b.dataset.win; renderInsights(); saveState(); });
+  $("#consView").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (!b) return;
+    state.consView = b.dataset.view; renderConstituents(); });
+  // Heatmap: hover shows a company card for a mouse, a tap shows it on touch (tap again or
+  // outside to close), and the arrow keys walk the tiles in order of weight within each sector
+  const hm = $("#heatmap");
+  let tapType = "mouse";
+  const hmPoint = (e) => { const r = hm.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  hm.addEventListener("pointerdown", (e) => { tapType = e.pointerType; });
+  hm.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") return;
+    const t = e.target.closest(".ht");
+    if (t) showHeatTip(t, ...hmPoint(e)); else hideHeatTip();
+  });
+  hm.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hideHeatTip(); });
+  hm.addEventListener("click", (e) => {
+    const t = e.target.closest(".ht"); if (!t) return;
+    for (const x of hm.querySelectorAll(".ht")) x.tabIndex = x === t ? 0 : -1;
+    const touch = tapType !== "mouse" && e.detail !== 0;
+    // A click (or Enter) opens the profile; on touch the first tap shows the card with a link
+    if (!touch && PROFILES.has(t.dataset.id)) { location.href = profileHref(t.dataset.id); return; }
+    if (touch && heatTipId === t.dataset.id) { hideHeatTip(); return; }
+    if (e.detail === 0) showHeatTip(t);                      // Enter or Space on a focused tile
+    else showHeatTip(t, ...hmPoint(e), touch);
+  });
+  hm.addEventListener("focusin", (e) => { const t = e.target.closest(".ht"); if (t && t.matches(":focus-visible")) showHeatTip(t); });
+  hm.addEventListener("focusout", (e) => { if (!hm.contains(e.relatedTarget)) hideHeatTip(); });
+  hm.addEventListener("keydown", (e) => {
+    const tiles = [...hm.querySelectorAll(".ht")], i = tiles.indexOf(document.activeElement);
+    if (i < 0) return;
+    const j = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: tiles.length - 1 }[e.key];
+    if (e.key === "Escape") { hideHeatTip(); return; }
+    if (j == null) return;
+    e.preventDefault();
+    const t = tiles[Math.max(0, Math.min(tiles.length - 1, j))];
+    tiles[i].tabIndex = -1; t.tabIndex = 0; t.focus();
+  });
+  document.addEventListener("click", (e) => { if (!e.target.closest("#heatmap")) hideHeatTip(); });
+  if ("ResizeObserver" in window) new ResizeObserver(() => {
+    if (state.consView === "map" && hm.clientWidth && hm.clientWidth !== heatW) renderHeatmap();
+  }).observe(hm);
+  $("#zoomIn").addEventListener("click", () => zoomBy(0.6));
+  $("#zoomOut").addEventListener("click", () => zoomBy(1.7));
+  $("#zoomReset").addEventListener("click", () => chartFit && chartFit());
+  $("#chart").addEventListener("keydown", (e) => {
+    const k = { "+": () => zoomBy(0.6), "=": () => zoomBy(0.6), "-": () => zoomBy(1.7), "_": () => zoomBy(1.7),
+      "0": () => chartFit && chartFit(), ArrowLeft: () => panBy(-0.2), ArrowRight: () => panBy(0.2) }[e.key];
+    if (k) { e.preventDefault(); k(); }
+  });
+  // Trackpad pinch arrives as Ctrl + wheel; plain wheel keeps scrolling the article
+  $("#chart").addEventListener("wheel", (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    zoomBy(e.deltaY > 0 ? 1.2 : 0.83);
+  }, { passive: false });
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const retheme = () => { renderChart(); drawCorr(); };
+  (mq.addEventListener ? mq.addEventListener("change", retheme) : mq.addListener(retheme));
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  // Embedded in an article: report the content height so the host page can size the iframe.
+  // Measure <body>, not documentElement.scrollHeight: inside an iframe that never drops below
+  // the frame's current height, so the frame could grow but never shrink back.
+  if (window.parent !== window) {
+    let last = 0;
+    const post = () => {
+      const h = Math.ceil(document.body.getBoundingClientRect().height);
+      if (!h || h === last) return;
+      last = h;
+      window.parent.postMessage({ type: "nati:height", height: h }, "*");
+      // AMP pages size an <amp-iframe resizable> from this message
+      window.parent.postMessage({ sentinel: "amp", type: "embed-size", height: h }, "*");
+    };
+    if ("ResizeObserver" in window) new ResizeObserver(post).observe(document.body);
+    window.addEventListener("load", post);
+    post();
+    // Tell the host which page is showing; after a move between the index and a company
+    // profile the host scrolls the frame's top back into view
+    window.parent.postMessage({ type: "nati:page", page: "index" }, "*");
+  }
+  // Keep an open page current: look for a new data build every few minutes while visible
+  setInterval(refreshData, POLL_MS);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshData(); });
+}
+
+/* ---------------- live refresh ---------------- */
+const POLL_MS = 5 * 60 * 1000;
+let refreshing = false;
+async function refreshData() {
+  if (document.hidden || refreshing) return;
+  refreshing = true;
+  try {
+    const next = await getJSON("index.json");
+    if (next && next.generated_at !== IDX.generated_at) {
+      const [s, c, rv] = await Promise.all([getJSON("symbols.json"), getJSON("constituents.json"), getJSON("reviews.json")]);
+      IDX = next; SYMBOLS = s; CONS = c; REVIEWS = rv;
+      // Fetch the comparison series again, but keep the copy already on screen if a fetch
+      // fails (the build may be rewriting the file at that moment), so a comparison never drops out
+      const old = new Map(seriesCache);
+      seriesCache.clear();
+      await Promise.all(state.compares.map(async (id) => {
+        try { await getSeries(id); } catch (e) { if (old.has(id)) seriesCache.set(id, old.get(id)); }
+      }));
+      try { INS = await getJSON("insights.json"); $("#tab-insights").hidden = false; } catch (e) { /* keep the insights on screen */ }
+      try { const pj = await getJSON("companies/index.json"); PROFILES = new Set(pj.ids); RETURNS = pj.returns || {}; } catch (e) { /* keep the last copy */ }
+      renderRanges(); renderOverview(); renderConstituents(); renderMethod(); renderInsights(); renderFooter();
+      if (LWC) renderChart();          // keeps the reader's range, comparisons and zoom
+    } else {
+      renderStamp();                   // no new build: the stamp may still need to stop saying live
+    }
+  } catch (e) {
+    renderStamp();                     // offline or a failed fetch: keep showing the last data
+  } finally {
+    refreshing = false;
+  }
+}
+
+function applyThemeHint() {
+  const q = new URLSearchParams(location.search).get("theme");
+  const h = location.hash.replace("#", "");
+  const t = q || (h === "light" || h === "dark" ? h : null);
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+}
+
+async function init() {
+  applyThemeHint();
+  const profiles = getJSON("companies/index.json").catch(() => null);
+  const insights = getJSON("insights.json").catch(() => null);
+  try {
+    [IDX, SYMBOLS, CONS, REVIEWS] = await Promise.all([getJSON("index.json"), getJSON("symbols.json"), getJSON("constituents.json"), getJSON("reviews.json")]);
+  } catch (err) {
+    $("#stamp").textContent = "The index data could not be loaded. Refresh the page to try again.";
+    $("#loading").textContent = "Data unavailable";
+    return;
+  }
+  if (!LWC) { $("#loading").textContent = "The chart library did not load. Refresh the page to try again."; }
+  const pj = await profiles;
+  PROFILES = new Set((pj && pj.ids) || []);
+  RETURNS = (pj && pj.returns) || {};
+  INS = await insights;
+  $("#tab-insights").hidden = !INS;
+  const savedTab = restoreState();
+  renderTypeMenu(); renderIndMenu(); renderRanges(); renderOverview(); renderConstituents(); renderMethod(); renderInsights(); renderFooter();
+  wire();
+  let rz = 0;
+  window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawCorr, 150); });
+  // ?tab=constituents|method (the company profile's back link) wins over the remembered tab
+  const hashTab = location.hash.slice(1);
+  const want = new URLSearchParams(location.search).get("tab") || (/^(overview|constituents|insights|method)$/.test(hashTab) ? hashTab : null);
+  const tab = want ? document.getElementById("tab-" + want) : savedTab && document.getElementById(savedTab);
+  if (tab && tab.getAttribute("role") === "tab") tab.click();
+  if (LWC) renderChart();
+}
+init();
+})();
+</script>
+<!-- /BODY-END -->
+</body>
+</html>

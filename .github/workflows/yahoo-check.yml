@@ -1,0 +1,39 @@
+name: Yahoo Finance access check
+
+# Run this once by hand (Actions → Yahoo Finance access check → Run workflow) before relying on the
+# scheduled refresh. Yahoo sometimes rate-limits or blocks requests from cloud servers; this shows
+# whether GitHub's runners can download the prices the index needs.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Download a sample of prices
+        run: |
+          python - <<'EOF'
+          import sys
+          import yfinance as yf
+          ok = True
+          for t in ["ETERNAL.NS", "PAYTM.NS", "^NSEI", "^NDX"]:
+              d = yf.Ticker(t).history(period="5d", interval="1d")
+              m = yf.Ticker(t).history(period="5d", interval="5m")
+              print(f"{t:12} daily rows: {len(d):3}   5-minute rows: {len(m):4}")
+              ok &= len(d) > 0
+          if not ok:
+              print("Yahoo returned no data from this runner. Run the refresh on your own machine instead (see README).")
+              sys.exit(1)
+          print("Yahoo access works from GitHub Actions.")
+          EOF

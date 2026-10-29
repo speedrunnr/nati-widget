@@ -1,0 +1,27 @@
+<!--
+  Inc42 New-Age Tech Index (NATI) widget: embed for an AMP article.
+  Needs the amp-iframe component in the page <head> (most AMP setups include it already):
+    <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
+
+  Replace https://YOUR-USERNAME.github.io/YOUR-REPO/ with the widget's address (HTTPS, and a different origin
+  from the article, which GitHub Pages or a custom subdomain already is).
+
+  The widget posts AMP's "embed-size" message, so with `resizable` the frame grows to fit after the reader
+  interacts with it; AMP only resizes on interaction, so the "Show the full index" bar stays until then.
+  AMP requires the frame to be at least 600px from the top of the page or carry a placeholder: the
+  placeholder below covers that.
+-->
+<amp-iframe
+  src="https://YOUR-USERNAME.github.io/YOUR-REPO/?theme=light"
+  title="Inc42 New-Age Tech Index: interactive chart, constituents, insights and company profiles"
+  width="360" height="760" layout="responsive"
+  sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+  resizable frameborder="0">
+  <div placeholder style="display:flex;align-items:center;justify-content:center;background:#f3f5f8;color:#3b4350;font:15px/1.4 system-ui,sans-serif;">
+    Loading the Inc42 New-Age Tech Index…
+  </div>
+  <div overflow tabindex="0" role="button" aria-label="Show the full index"
+    style="background:#ffffff;color:#2a78d6;text-align:center;padding:12px;font:600 14px system-ui,sans-serif;border-top:1px solid #e4e7ec;">
+    Show the full index
+  </div>
+</amp-iframe>

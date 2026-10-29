@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Built on every run by nati_ff.py (the leading / keeps v2/site/, the widget, in the repo)
+/.cache/
+/site/
+/index_history.csv
+*.tmp
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/

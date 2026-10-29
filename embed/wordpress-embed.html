@@ -1,0 +1,55 @@
+<!--
+  Inc42 New-Age Tech Index (NATI) widget: embed for a WordPress article.
+  Paste everything below this comment into a "Custom HTML" block.
+
+  Replace https://YOUR-USERNAME.github.io/YOUR-REPO/ (twice) with the widget's address: the GitHub Pages URL,
+  or a custom domain such as https://nati.inc42.com/ once one is set up. The script reads the widget's origin
+  from the iframe's src, so it needs no edits.
+
+  ?theme=light keeps the widget light inside a white article from the first paint. Use ?theme=dark on a dark
+  page, or remove ?theme=... to follow the reader's device setting.
+
+  The <script> needs a user who may post unfiltered HTML (WordPress editors and administrators can). Without it
+  the widget still works, at the fixed fallback height below, with a scrollbar inside the frame.
+-->
+<style>
+  /* Fallback heights until the widget reports its own (or if this block's script is stripped) */
+  #nati-index-widget { height: 1750px; }
+  @media (max-width: 640px) { #nati-index-widget { height: 2250px; } }
+</style>
+<figure class="nati-embed" style="margin:24px 0;padding:0;">
+  <iframe
+    id="nati-index-widget"
+    src="https://YOUR-USERNAME.github.io/YOUR-REPO/?theme=light"
+    title="Inc42 New-Age Tech Index: interactive chart, constituents, insights and company profiles"
+    loading="lazy"
+    width="100%"
+    height="1750"
+    style="display:block;width:100%;border:0;"
+    referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  <figcaption style="font-size:13px;line-height:1.4;color:#6b7280;margin-top:8px;">
+    Chart not loading? <a href="https://YOUR-USERNAME.github.io/YOUR-REPO/?theme=light" target="_blank" rel="noopener">Open the Inc42 New-Age Tech Index</a>.
+  </figcaption>
+</figure>
+<script>
+  (function () {
+    var frame = document.getElementById("nati-index-widget");
+    if (!frame) return;
+    var origin = new URL(frame.getAttribute("src"), location.href).origin;
+    var pages = 0;
+    window.addEventListener("message", function (e) {
+      if (e.origin !== origin || e.source !== frame.contentWindow) return;
+      var d = e.data;
+      if (!d) return;
+      // The reader moved between the index and a company profile inside the frame:
+      // bring the top of the new page into view if the article is scrolled past it
+      if (d.type === "nati:page") {
+        if (pages++ && frame.getBoundingClientRect().top < 0) frame.scrollIntoView({ block: "start" });
+        return;
+      }
+      // The widget reports its content height whenever it changes; the frame follows it
+      if (d.type !== "nati:height" || typeof d.height !== "number") return;
+      frame.style.height = Math.max(400, Math.min(6000, Math.round(d.height))) + "px";
+    });
+  })();
+</script>
