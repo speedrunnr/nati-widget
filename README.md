@@ -72,8 +72,10 @@ embed/
 5. **Check Yahoo access.** Actions → *Yahoo Finance access check* → Run workflow. It should end with "Yahoo
    access works from GitHub Actions". If it fails, see *If Yahoo blocks GitHub* below.
 6. **First publish.** Actions → *Refresh and deploy* → Run workflow. When it finishes (3–5 minutes), the
-   widget is live at `https://YOUR-USERNAME.github.io/nati-widget/`. From then on it runs by itself every 20
-   minutes on weekdays from 08:30 to 16:10 IST, and rebuilds the company profiles every Monday at 07:30 IST.
+   widget is live at `https://YOUR-USERNAME.github.io/nati-widget/`.
+7. **Set up the outside scheduler.** GitHub's own schedule can be hours late or skip runs entirely, so a free
+   [cron-job.org](https://cron-job.org) job starts each refresh instead (see *Reliable refresh schedule* below).
+   The workflow's own schedule stays on as a backup.
 
 ## Embed it in an Inc42 article
 
@@ -138,6 +140,26 @@ python3 -m venv .venv
   activity. The Monday profile commit keeps it active; if it ever pauses, Actions → *Refresh and deploy* →
   Enable workflow.
 
+### Reliable refresh schedule
+
+Two cron-job.org jobs start the workflow through GitHub's API. Both use `Asia/Kolkata` time and POST to:
+
+```
+https://api.github.com/repos/YOUR-USERNAME/nati-widget/actions/workflows/refresh.yml/dispatches
+```
+
+| Job | Schedule | Crontab | Request body |
+|---|---|---|---|
+| NATI refresh | Weekdays, 09:05 to 16:45 IST, every 20 min | `5,25,45 9-16 * * 1-5` | `{"ref":"main"}` |
+| NATI weekly rebuild | Mondays, 07:30 IST | `30 7 * * 1` | `{"ref":"main","inputs":{"full_rebuild":"true"}}` |
+
+Each sends these headers: `Accept: application/vnd.github+json`, `Authorization: Bearer YOUR-TOKEN`,
+`X-GitHub-Api-Version: 2022-11-28` and `Content-Type: application/json`. A successful call returns 204.
+
+The token is a GitHub fine-grained personal access token for this repository only, with **Actions: Read and
+write**. When it expires the refresh stops, so create a new one and update both jobs before then. The same
+applies if it leaks: delete it in GitHub first.
+
 ### If Yahoo blocks GitHub
 
 Yahoo Finance sometimes blocks cloud servers. If the access check fails, or refreshes keep failing, run the
@@ -147,7 +169,8 @@ schedule with `on: push` and delete the three data-building steps, so each push 
 
 ## Limits to know
 
-- GitHub runs scheduled workflows on a best-effort basis; "every 20 minutes" can become 30–40 at busy times.
+- GitHub runs scheduled workflows on a best-effort basis: in this repository's first day they ran hours late
+  or not at all. Refreshes therefore rely on the outside scheduler; without it, expect long gaps.
 - GitHub Pages has a soft bandwidth limit of about 100 GB a month. A first view of the widget is roughly
   150–250 KB, so that covers several hundred thousand views. For more, Cloudflare Pages can serve this same
   repository with unlimited bandwidth.

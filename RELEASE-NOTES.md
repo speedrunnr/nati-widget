@@ -46,4 +46,4 @@ including across a quarterly review.
   later is needed for some colour blending in the stylesheet; older versions fall back to plainer fills.
 - Yahoo Finance may limit requests from GitHub's servers; run the *Yahoo Finance access check* workflow first.
 - Yahoo is missing some quarters of financials (shown as "—" with a note); P/E is blank for loss-makers.
-- Scheduled GitHub runs can start late at busy times.
+- GitHub's scheduled runs can be hours late or skipped, so an outside scheduler (cron-job.org) starts each refresh.
