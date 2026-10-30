@@ -1295,14 +1295,14 @@ function renderConstituents() {
   const shown = q || state.consAll ? rows : rows.slice(0, CONS_PREVIEW);
   $("#consBody").innerHTML = shown.map((c) => `<tr class="${c.weight_at_review >= 0.1499 ? "cap" : ""}">
     <td><div class="co">${PROFILES.has(c.id) ? `<a href="${profileHref(c.id)}">${c.company}</a>` : c.company}<small>${c.sector} · ${c.ticker}</small></div></td>
-    <td><div class="w"><i style="width:${(c.weight / maxW) * 100}%"></i><b>${(c.weight * 100).toFixed(2)}%</b></div></td>
+    <td><div class="w"><i style="width:${(c.weight / maxW) * 100}%"></i><b${c.weight_at_review >= 0.1499 ? ' title="Capped at 15% at the last review; the weight has moved with prices since"' : ""}>${(c.weight * 100).toFixed(2)}%</b></div></td>
     <td class="r hide-sm">${fmt(c.price)}</td>
     <td class="r ${c.change_pct >= 0 ? "up" : "down"}">${pct(c.change_pct)}</td>
     <td class="r hide-sm">${nf0.format(c.mcap_cr)}</td></tr>`).join("");
   const map = state.consView === "map";
   $("#consCount").textContent = q
-    ? `${rows.length} of ${CONS.length} match${map ? "" : " · weights drift with prices between reviews"}`
-    : `${CONS.length} constituents${map ? "" : " · weights drift with prices between reviews"}`;
+    ? `${rows.length} of ${CONS.length} match${map ? "" : " · 15% cap applies at each review; weights drift in between"}`
+    : `${CONS.length} constituents${map ? "" : " · 15% cap applies at each review; weights drift in between"}`;
   const more = $("#consMore");
   more.hidden = map || !!q || rows.length <= CONS_PREVIEW;
   more.textContent = state.consAll ? `Show top ${CONS_PREVIEW}` : `Show all ${rows.length} constituents`;
@@ -1520,7 +1520,7 @@ function renderMethod() {
     <ul>
       <li><b>Eligibility.</b> Mainboard listing in India, market cap of at least ₹1,000 Cr and average daily traded value of at least ₹5 Cr over the past three months. Companies listed abroad are excluded.</li>
       <li><b>Seasoning.</b> A new listing joins after 90 days of trading. A mega IPO, whose free-float market cap would rank in the top 10% of eligible companies, can join after 30 days.</li>
-      <li><b>Cap.</b> No company above 15% at a review. Any excess is shared out among the others in proportion to their size, so the order by size never changes.</li>
+      <li><b>Cap.</b> Each company's weight is limited to 15% at every quarterly review. Any excess is shared out among the others in proportion to their size, so the order by size never changes. Between reviews, a company that outperforms the index can rise above 15% until the next review resets it.</li>
       <li><b>Reviews.</b> Constituents and weights are reset on the last trading day of each quarter and apply from the next session. Between reviews, weights drift with prices.</li>
       <li><b>Base.</b> ${nf0.format(IDX.base_value)} on ${dstr(IDX.base_date)}. Levels are chain-linked, so a published value never changes. It is a price index; dividends are not reinvested.</li>
     </ul>

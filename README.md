@@ -1,8 +1,8 @@
 # Inc42 New-Age Tech Index (NATI) widget
 
 An embeddable, self-updating widget for the **Inc42 New-Age Tech Index**: 50 Indian new-age tech companies
-listed on the NSE or BSE mainboard, weighted by free-float market cap with a 15% cap per company, rebalanced
-every quarter, base 1,000 on 31 December 2024. Built by Inc42 Datalabs.
+listed on the NSE or BSE mainboard, weighted by free-float market cap, reviewed every quarter, when each
+company's weight is capped at 15% (weights drift with prices between reviews), base 1,000 on 31 December 2024. Built by Inc42 Datalabs.
 
 It is a static site (HTML, CSS, JavaScript and JSON files, no server code), so GitHub Pages can host it. A
 GitHub Actions workflow rebuilds the data from Yahoo Finance every 20 minutes during market hours and
